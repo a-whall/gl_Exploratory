@@ -32,35 +32,45 @@ public:
 
 	Particles* particles;
 	Scene::Object* cube;
+	Scene::Object* sphere;
+	Scene::Object* pointSprites;
 
 	Shader::Program* phongShader;
+	Shader::Program* pointSpriteShader;
 
 	void init(const char* title, int x, int y, int w, int h, int fullscreen) {
 		initializeFramework_createWindow(title, x, y, w, h, fullscreen);
-		cam = new Camera::Viewport(vec3(0.0f, 0.0f, 10.0f), vec3(0.0f, 0.0f, -1.0f), radians(70.0f), 0.1f, 1000.0f);
+		cam = new Camera::Viewport(vec3(0.0f, 0.0f, 3.0f), vec3(0.0f, 0.0f, -1.0f), radians(70.0f), 0.1f, 1000.0f);
 		prep_scene();
 	}
 
 	void handleEvents() {
 		SDL_PollEvent(&event);
-		if (event.type == SDL_MOUSEMOTION)  cam->mouse_motion(event.motion.x, event.motion.y);
-		if (event.type == SDL_MOUSEWHEEL)   cam->mouse_scroll(event.wheel.y);
-		if (event.type == SDL_WINDOWEVENT)  if (event.window.event == SDL_WINDOWEVENT_ENTER) cam->set_firstMouse(true);
-		if (event.type == SDL_QUIT)	        running = false;
-		if (event.type == SDL_KEYUP)        if (event.key.keysym.sym == SDLK_ESCAPE) running = false;
+		if (event.type == SDL_MOUSEMOTION) 
+			cam->mouse_motion(event.motion.x, event.motion.y);
+		if (event.type == SDL_MOUSEWHEEL)  
+			cam->mouse_scroll(event.wheel.y);
+		if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_ENTER)
+			cam->set_firstMouse(true);
+		if (event.type == SDL_QUIT)	       
+			running = false;
+		if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE)
+			running = false;
 		
 		SDL_PumpEvents();
-		if (keyStates[SDL_SCANCODE_A])      cam->move(-.1f, cam->RIGHT);
-		if (keyStates[SDL_SCANCODE_W])      cam->move(0.1f,  cam->FORWARD);
-		if (keyStates[SDL_SCANCODE_LSHIFT]) cam->move(-.1f,  cam->UP);
-		if (keyStates[SDL_SCANCODE_D])      cam->move(0.1f,   cam->RIGHT); 
-		if (keyStates[SDL_SCANCODE_S])      cam->move(-.1f,  cam->FORWARD);
-		if (keyStates[SDL_SCANCODE_SPACE])  cam->move(0.1f,  cam->UP);
+		if (keyStates[SDL_SCANCODE_A]) cam->move(-.1f, cam->RIGHT);
+		if (keyStates[SDL_SCANCODE_W]) cam->move(0.1f, cam->FORWARD);
+		if (keyStates[SDL_SCANCODE_LSHIFT]) cam->move(-.1f, cam->UP);
+		if (keyStates[SDL_SCANCODE_D]) cam->move(0.1f, cam->RIGHT); 
+		if (keyStates[SDL_SCANCODE_S]) cam->move(-.1f, cam->FORWARD);
+		if (keyStates[SDL_SCANCODE_SPACE])  cam->move(0.1f, cam->UP);
 	}
 	void update( float timeStep )
 	{
-		particles->update(timeStep);
-		//cube->set_matrices(*cam, *phongShader);
+		//particles->update(timeStep);
+		//cube->update(timeStep);
+		//sphere->update(timeStep);
+		pointSprites->update(timeStep);
 	}
 	void render()
 	{
@@ -70,7 +80,10 @@ public:
 
 		//phongShader->use();
 		//cube->render();
-		
+		//sphere->render();
+
+		pointSprites->render();
+
 		SDL_GL_SwapWindow(window); // render back buffer to the screen
 	}
 	void clean()
@@ -96,18 +109,17 @@ private:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
-		//phongShader = new Shader::Program();
-		//phongShader->create("src/Phong.glsl");
+		//phongShader = new Shader::Program("src/Phong.glsl");
 		//set_phong_uniforms(*phongShader);
-		//cube = new Cube(0.0f, 0.0f, -1.0f);
+		//cube = new Cube(0.0f, 0.0f, -1.0f, *cam, *phongShader);
+		//sphere = new Sphere(-3.0f, 2.0f, 2.0f, *cam, *phongShader);
 
+		pointSpriteShader = new Shader::Program("src/PointSprites.glsl");
+		pointSprites = new PointSprites("media/diamond_ore.png",*cam, *pointSpriteShader);
 
-		particles = new Particles(15, 15, 15, *cam);
+		particles = new Particles(20, 20, 20, *cam);
 	}
 
-	void set_pointSprite_uniforms(Shader::Program &shader) {
-		
-	}
 	void set_phong_uniforms(Shader::Program &shader) {
 		shader.use();
 		vec4 worldLight = vec4(5.0f, 5.0f, 2.0f, 1.0f);
@@ -129,9 +141,6 @@ private:
 		shader.set("WorldCameraPosition", cam->get_position());
 		shader.set("MaterialColor", vec4(0.5f, 0.5f, 0.5f, 1.0f));
 		shader.set("ReflectFactor", 0.85f);
-	}
-	void set_computeBlackHole_Uniforms(Shader::Program &shader) {
-	    
 	}
 
 	void initializeFramework_createWindow(const char* title, int x, int y, int w, int h, int fullscreen)

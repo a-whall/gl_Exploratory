@@ -12,7 +12,7 @@
 using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 using glm::lookAt, glm::perspective, glm::radians;
 
-namespace Geom // look at what this function is doing, it seems like it should be apart of Vertex::Array
+namespace Geom
 {
 	using glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 	using std::vector;

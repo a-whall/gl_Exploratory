@@ -8,7 +8,9 @@ class Cube: public Scene::Object
     std::vector<float> vertexBufferData;
 
 public:
-    Cube(float x, float y, float z) : Scene::Object(x, y, z) {
+
+    Cube(float x, float y, float z, Camera::Viewport& cam, Shader::Program& shader)
+        : Scene::Object(x, y, z, cam, &shader) {
         init_buffers();
     }
     
@@ -60,23 +62,29 @@ public:
         Geom::makeTriangleMeshBuffers(&el, &data, true, true, false);
     }
 
-    void set_uniforms(Camera::Viewport &cam, Shader::Program &shader) override {
-    
+    void update(float t) override {
+        set_uniforms();
+        set_matrices();
     }
 
-    void set_matrices(Camera::Viewport &cam, Shader::Program &shader) override {
-        rotate();
-        glm::mat4 mv = cam.get_WorldToView_Matrix() * model;
-        shader.set("ModelViewMatrix", mv);
-        shader.set("NormalMatrix", mat3(vec3(mv[0]), vec3(mv[1]), vec3(mv[2])));
-        shader.set("MVP", cam.get_ViewToProjection_Matrix() * mv);
-    }
-    void render() override {
-        glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, nullptr);
+    void render() override {  // TODO: fix bug where cube (and sphere) dont have vao to bind when rendering multiple objects
+        glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, 0);
     }
 
 private:
     void rotate() {
         model = glm::rotate(model, radians(0.3f), vec3(0.0f, 1.0f, 0.0f));
+    }
+
+    void set_uniforms() {
+        shader->use();
+        shader->set("ModelViewMatrix", mv);
+        shader->set("NormalMatrix", mat3(vec3(mv[0]), vec3(mv[1]), vec3(mv[2])));
+        shader->set("MVP", cam.get_ViewToProjection_Matrix() * mv);
+    }
+
+    void set_matrices() {
+        rotate();
+        mv = cam.get_WorldToView_Matrix() * model;
     }
 };

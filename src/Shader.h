@@ -269,6 +269,10 @@ namespace Shader
 			compiler(new Compiler(&handle)),
 			debugger(new Debugger(&handle)) {
 		}
+		Program(const char* srcFileName)
+			: Program() {
+			create(srcFileName);
+		}
 		~Program() {
 			glDeleteProgram(handle);
 			delete compiler;

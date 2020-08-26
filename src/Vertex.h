@@ -74,10 +74,7 @@ namespace Vertex {
 			glBufferSubData(bufferType, 0, size, data);
 		}
 
-		// move enable_attributes() to Vertex::Array since (as per web bookmark "VAOs and binding") these are the calls which adjust a VAOs state.
-		// this function should never have been encapsulated here since it is entirely to do with the currently bound VAO, and a buffer can
-		// be used in other VAOs
-		void enable_attributes() { // maybe rename to bind_buffer_enable_attributes()
+		void enable_attributes() {
 			bind();
 			for (Attribute a : format->attribs) {
 				glEnableVertexAttribArray(a.index);
@@ -89,23 +86,23 @@ namespace Vertex {
 	private:
 
 		template <typename T>
-		void gl_genBuffer(GLenum bufferType, unsigned size, T data[], GLenum usageHint) {
+		void gl_genBuffer(GLenum bindingTarget, unsigned size, T data[], GLenum usageHint) {
 			glGenBuffers(1, &handle);
-			glBindBuffer(bufferType, handle);
-			glBufferData(bufferType, size, data, usageHint);
+			glBindBuffer(bindingTarget, handle);
+			glBufferData(bindingTarget, size, data, usageHint);
 		}
 		template <typename T>
-		void gl_genBufferBase(GLenum bufferType, unsigned size, T data[], GLenum usageHint, unsigned bindingIndex) {
+		void gl_genBufferBase(GLenum bindingTarget, unsigned size, T data[], GLenum usageHint, unsigned bindingIndex) {
 			glGenBuffers(1, &handle);
-			glBindBufferBase(bufferType, bindingIndex, handle);
-			glBufferData(bufferType, size, data, usageHint);
+			glBindBufferBase(bindingTarget, bindingIndex, handle);
+			glBufferData(bindingTarget, size, data, usageHint);
 		}
 	};
 
 	struct Index : Buffer<unsigned>
 	{
-		Index(unsigned size, GLuint data[], GLenum usageType)
-			: Buffer<unsigned>(GL_ELEMENT_ARRAY_BUFFER, size, data, usageType) {}
+		Index(unsigned size, GLuint data[], GLenum usageHint)
+			: Buffer<unsigned>(GL_ELEMENT_ARRAY_BUFFER, size, data, usageHint) {}
 		void bind() const override { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); }
 	};
 
@@ -119,7 +116,7 @@ namespace Vertex {
 
 		void bind() const { glBindVertexArray(handle); }
 		
-		template<typename T> void bindBuffer(Buffer<T> &vbo) const {
+		template<typename T> void bindBuffer(Buffer<T> &vbo) {
 			bind();
 			vbo.enable_attributes();
 		}

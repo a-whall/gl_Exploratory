@@ -5,7 +5,15 @@ class Sphere : public Scene::Object
 {
 	float radius = 1.0f; // unit sphere
 public:
-	Sphere(float x, float y, float z) : Scene::Object(x, y, z) {
+
+	Sphere(float x, float y, float z, Camera::Viewport& cam, Shader::Program& shader) : Scene::Object(x, y, z, cam, &shader)
+	{
+		init_buffers();
+		model = glm::mat4(1.0f); // identity matrix - leave the object coordinates at world origin.
+		model = glm::translate(model, vec3(1.0f, 1.0f, -1.0f));
+		model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 0.0f, 1.0f));
+	}
+	void init_buffers() override {
 		GLuint nSlices = 500, nStacks = 500;
 		std::cout << "sphere()\n";
 		int verts = (nSlices + 1) * (nStacks + 1);
@@ -75,32 +83,31 @@ public:
 		}
 		Geom::makeTriangleMeshBuffers(&el, &data, true, true, false);
 		nVerts = el.size();
-
-		model = glm::mat4(1.0f); // identity matrix - leave the object coordinates at world origin.
-		model = glm::translate(model, vec3(1.0f, 1.0f, -1.0f));
-		model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 0.0f, 1.0f));
 	}
-
-	void set_uniforms(Camera::Viewport& cam, Shader::Program& shader) override {
-
+	void update(float timeStep) override {
+		set_uniforms();
+		set_matrices();
 	}
-
-	void set_matrices(Camera::Viewport &cam, Shader::Program &shader) {
-		rotate();
-		mat4 mv = cam.get_WorldToView_Matrix() * model;
-		shader.set("ModelViewMatrix", mv);
-		shader.set("NormalMatrix", mat3(vec3(mv[0]), vec3(mv[1]), vec3(mv[2])));
-		shader.set("MVP", cam.get_ViewToProjection_Matrix() * mv);
-	}
-	void render(){
+	
+	void render() {
 		glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, nullptr);
 	}
 
-	//void setModel(mat4 m) { model = m; }
-	//mat4 getModel() { return model; }
-
 private:
+
 	void rotate() {
 		model = glm::rotate(model, radians(1.0f), vec3(0.0f, 1.0f, 0.0f));
+	}
+
+	void set_uniforms() {
+		shader->use();
+		shader->set("ModelViewMatrix", mv);
+		shader->set("NormalMatrix", mat3(vec3(mv[0]), vec3(mv[1]), vec3(mv[2])));
+		shader->set("MVP", cam.get_ViewToProjection_Matrix() * mv);
+	}
+
+	void set_matrices() {
+		rotate();
+		mv = cam.get_WorldToView_Matrix() * model;
 	}
 };

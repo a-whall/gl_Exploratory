@@ -9,17 +9,21 @@ namespace Scene {
 	protected:
 
 		int nVerts; // must be assigned from child, init_buffers
-		mat4 model; // scene obj 
+		mat4 model; // scene obj coordinate space
+		mat4 mv;    // "model to view" matrix storage
+
+		Camera::Viewport& cam;
+		Shader::Program* shader;
 
 	public:
-		Object() : model(1.0f) { std::cout << "\nSceneObject::"; }
-		Object(float x, float y, float z) : Object() { model = glm::translate(model, vec3(x, y, z)); }
 
+		Object(float x, float y, float z, Camera::Viewport& c, Shader::Program* s = nullptr)
+			: model(1.0f), cam(c), shader(s) {
+			model = glm::translate(model, vec3(x, y, z));
+		}
 
 		virtual void init_buffers() = 0;
-		virtual void update(float timestep) = 0;
-		virtual void set_uniforms(Camera::Viewport&, Shader::Program&) = 0;
-		virtual void set_matrices(Camera::Viewport&, Shader::Program&) = 0;
+		virtual void update( float) = 0;
 		virtual void render() = 0;
 
 		virtual mat4 getModel() final { return model; };

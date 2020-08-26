@@ -2,11 +2,12 @@
 #include "Geometry.h"
 
 
-class Skybox: public Scene::Object
+class Skybox : public Scene::Object
 {
     float size;
 public:
-    Skybox(float sideLength) : Scene::Object(0, 0, 0) { size = sideLength; }
+    Skybox(float sideLength, Camera::Viewport& cam, Shader::Program& shader)
+        : Scene::Object(0, 0, 0, cam, &shader) { size = sideLength; }
     
     void init_buffers() override {
         float side2 = size * 0.5f;
@@ -52,15 +53,18 @@ public:
         };
         Geom::makeTriangleMeshBuffers(&el, &data, false, false, false);
     }
-    void set_uniforms(Camera::Viewport& cam, Shader::Program& shader) override {
+    void update(float timeStep) override {
     
-    }
-    void set_matrices(Camera::Viewport &cam, Shader::Program &shader) override {
-        mat4 mv = cam.get_WorldToView_Matrix() * model;
-        shader.set("ModelMatrix", model);
-        shader.set("MVP", cam.get_ViewToProjection_Matrix() * mv);
     }
     void render() override {
         // TODO
     }
+private:
+
+    void set_matrices() {
+        mv = cam.get_WorldToView_Matrix() * model;
+        shader->set("ModelMatrix", model);
+        shader->set("MVP", cam.get_ViewToProjection_Matrix() * mv);
+    }
+
 };

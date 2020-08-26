@@ -6,8 +6,6 @@ using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 
 class Particles : public Scene::Object {
 
-    Camera::Viewport& cam;
-
     glm::ivec3 numParticles;
     unsigned totalParticles;
 
@@ -24,7 +22,8 @@ class Particles : public Scene::Object {
     mat4 rotationMatrix;
 
 public:
-    Particles(int numX, int numY, int numZ, Camera::Viewport &c) : Scene::Object(), numParticles(numX, numY, numZ), cam(c) {
+    Particles(int numX, int numY, int numZ, Camera::Viewport &cam)
+        : Scene::Object(0.0f, 0.0f, 0.0f, cam), numParticles(numX, numY, numZ) {
         std::cout << "Particles()\n\n";
         assert(numX < MAX_NUM_PARTICLES_PER_D); assert(numY < MAX_NUM_PARTICLES_PER_D); assert(numZ < MAX_NUM_PARTICLES_PER_D);
         totalParticles = numParticles.x * numParticles.y * numParticles.z;
@@ -89,10 +88,6 @@ public:
         angle += rot_speed * dt;
         if (angle > 360.0f) angle -= 360.0f;
     }
-
-    void set_uniforms(Camera::Viewport& cam, Shader::Program& shader) override {}
-
-    void set_matrices(Camera::Viewport& cam, Shader::Program& shader) override {}
 
     void render() override {
         // Rotate attractors

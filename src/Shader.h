@@ -1,17 +1,10 @@
 #pragma once
-#define STRING_NOT_FOUND std::string::npos
-#define NUM_SUPPORTED_SHADER_TYPES 6
-#include <iostream>
 #include <cassert>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include <unordered_map>
 #include <glm.hpp>
-#include <GL/glew.h>
-#include <SDL_opengl.h>
 #include "debug.h"
-#include "Vertex.h"
 
 namespace Shader
 {
@@ -22,6 +15,7 @@ namespace Shader
 
 	class Compiler
 	{
+		static constexpr int NUM_SUPPORTED_SHADER_TYPES = 6;
 		GLuint* programHandle;
 		GLuint handles[NUM_SUPPORTED_SHADER_TYPES]{ 0, 0, 0, 0, 0, 0 };//individual shaders
 		string m_path;
@@ -138,7 +132,7 @@ namespace Shader
 			else return NONE; // perhaps throw a fatal compiler error and abort
 		}
 		bool line_contains(string phrase) {
-			return (line.find(phrase) != STRING_NOT_FOUND);
+			return (line.find(phrase) != string::npos);
 		}
 		bool source_code_exists_in(stringstream& ss) {
 			return ss.tellp() != std::streampos(0);
@@ -152,6 +146,7 @@ namespace Shader
 			case GEOM: return GL_GEOMETRY_SHADER;
 			case FRAG: return GL_FRAGMENT_SHADER;
 			case COMP: return GL_COMPUTE_SHADER;
+			default: std::cout << "\nShader::Compiler::glEnum()::invalid value.\n";  return -1;
 			}
 		}
     };
@@ -249,7 +244,7 @@ namespace Shader
 			case GL_FLOAT_MAT2: return "mat2";
 			case GL_FLOAT_MAT3: return "mat3";
 			case GL_FLOAT_MAT4: return "mat4";
-			default: return "?";
+			default: return "no T spec";
 			}
 		}
 	};
@@ -257,34 +252,21 @@ namespace Shader
 	class Program
 	{
 		std::unordered_map<const char*, int> uniformLocationCache;
-		Shader::Compiler* compiler;
-		Shader::Debugger* debugger;
+		Shader::Compiler compiler;
+		Shader::Debugger debugger;
 
 	public:
 		GLuint handle;
 
-		Program() : handle(glCreateProgram()),
-			compiler(new Compiler(&handle)),
-			debugger(new Debugger(&handle)) {
-		}
-		Program(const char* srcFileName)
-			: Program() {
-			create(srcFileName);
-		}
+		Program() : handle(glCreateProgram()), compiler(&handle), debugger(&handle) {}
+		Program(const char* srcFileName) : Program() { create(srcFileName); }
 		~Program() {
 			glDeleteProgram(handle);
-			delete compiler;
-			delete debugger;
 		}
 
-		void use() const { 
-			//auto t1 = std::chrono::high_resolution_clock::now();
-			glUseProgram(handle);
-			//auto t2 = std::chrono::high_resolution_clock::now();
-			//std::cout << "glUseProgram(): " << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() << " ns\n";
-		}
+		void use() const { glUseProgram(handle); }
 
-		void create(const char* fileName) { compiler->createShadersFrom(fileName); }
+		void create(const char* fileName) { compiler.createShadersFrom(fileName); }
 
 		void set(const char* name, int i) { glUniform1i(getUniformLocation(name), i); }
 		void set(const char* name, bool b) { glUniform1i(getUniformLocation(name), (int)b); }
@@ -308,8 +290,8 @@ namespace Shader
 			return location;
 		}
 
-		void showVertexAttributes() { debugger->printActiveVertexAttributes(); }
-		void showUniforms() { debugger->printActiveUniformVariables(); }
-		void showUniformBlocks() { debugger->printActiveUniformBlocks(); }
+		void showVertexAttributes() { debugger.printActiveVertexAttributes(); }
+		void showUniforms() { debugger.printActiveUniformVariables(); }
+		void showUniformBlocks() { debugger.printActiveUniformBlocks(); }
 	};
 }

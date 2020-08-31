@@ -1,15 +1,14 @@
 #pragma once
 #include <glm.hpp>
-#include <gtc/matrix_transform.hpp>
-#include <gtx/euler_angles.hpp>
-#include <gtc/type_ptr.hpp>
+#include <gtc/type_ptr.hpp> // for glm::make_mat4()
 
 constexpr glm::vec3 world_up_vector = glm::vec3(0.0f, 1.0f, 0.0f);
 constexpr float BOUND_MULTIPLIER = .25f;
 
 namespace Camera
 {
-	int window_w, window_h;
+	float window_w, window_h;
+	void setWindowDimmensions(int w, int h) { window_w = static_cast<float>(w), window_h = static_cast<float>(h); }
 
 	using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 	using glm::lookAt, glm::perspective, glm::cross, glm::normalize, glm::radians;
@@ -45,8 +44,8 @@ namespace Camera
 
 		float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
 		float pitch = 0.0f;
-		float midScreenX = window_w / 2.0;
-		float midScreenY = window_h / 2.0;
+		float midScreenX = window_w / 2.0f;
+		float midScreenY = window_h / 2.0f;
 		float thetaDegrees;
 		float lastX = midScreenX;
 		float lastY = midScreenY;

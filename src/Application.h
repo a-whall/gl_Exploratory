@@ -40,7 +40,7 @@ public:
 
 	void init(const char* title, int x, int y, int w, int h, int fullscreen) {
 		initializeFramework_createWindow(title, x, y, w, h, fullscreen);
-		Camera::window_w = w, Camera::window_h = h;
+		Camera::setWindowDimmensions(w, h);
 		cam = new Camera::Viewport(vec3(0.0f, 0.0f, 3.0f), vec3(0.0f, 0.0f, -1.0f), radians(70.0f), 0.1f, 1000.0f);
 		prep_scene();
 	}

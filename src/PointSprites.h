@@ -1,20 +1,21 @@
 #pragma once
 #include <SDL.h>
 #include <glm.hpp>
+#include "Scene.h"
 #include "Texture.h"
 #include "Shader.h"
 #include "Camera.h"
 
 class PointSprites : public Scene::Object
 {
-	int numSprites = 100;
-	Vertex::Array* sprite_vao;
-	Vertex::Buffer<float>* sprite_vbo;
+	const int numSprites = 100;
+	Vertex::Array vao;
+	Vertex::Buffer<float> vbo_pos;
 
 public:
 
 	PointSprites(const char* texFileName, Camera::Viewport& cam, Shader::Program& shader)
-		: Scene::Object(0.0f, 0.0f, 0.0f, cam, &shader) {
+		: Scene::Object(0.0f, 0.0f, 0.0f, cam, &shader), vao(), vbo_pos(numSprites * 3) {
 		GLuint texID = Texture::load(texFileName);
 		init_buffers();
 		set_uniforms();
@@ -22,23 +23,22 @@ public:
 
 	void init_buffers() {
 		nVerts = numSprites * 3;
-		float* locations = new float[nVerts];
+		//float* locations = new float[nVerts];
 		srand((unsigned)SDL_GetTicks());
 		for (int i = 0; i < numSprites; i++) {
 			glm::vec3 p(((float)rand() / RAND_MAX * 2.0f) - 1.0f,
 				((float)rand() / RAND_MAX * 2.0f) - 1.0f,
 				((float)rand() / RAND_MAX * 2.0f) - 1.0f);
-			locations[i * 3] = p.x;
-			locations[i * 3 + 1] = p.y;
-			locations[i * 3 + 2] = p.z;
+			vbo_pos[i * 3] = p.x;
+			vbo_pos[i * 3 + 1] = p.y;
+			vbo_pos[i * 3 + 2] = p.z;
 		}
-		sprite_vbo = new Vertex::Buffer<float>(nVerts * sizeof(float), locations, GL_STATIC_DRAW);
-		sprite_vbo->add_attribute<vec3>(0);
+		vbo_pos.add_attribute<vec3>(0);
 
-		delete[] locations;
+		//delete[] locations;
 
-		sprite_vao = new Vertex::Array();
-		sprite_vao->bindBuffer(*sprite_vbo);
+		//vao = new Vertex::Array();
+		vao.bindBuffer(vbo_pos);
 	}
 
 	void update(float timestep) override {
@@ -47,7 +47,7 @@ public:
 	
 	void render() override {
 		shader->use();
-		sprite_vao->bind();
+		vao.bind();
 		glDrawArrays(GL_POINTS, 0, numSprites);
 		glFinish();
 	}

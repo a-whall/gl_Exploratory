@@ -3,23 +3,27 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtx/euler_angles.hpp>
 #include <gtc/type_ptr.hpp>
-#define world_up_vector glm::vec3(0.0f, 1.0f, 0.0f)
 
+constexpr glm::vec3 world_up_vector = glm::vec3(0.0f, 1.0f, 0.0f);
 constexpr float BOUND_MULTIPLIER = .25f;
 
 namespace Camera
 {
+	int window_w, window_h;
+
 	using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 	using glm::lookAt, glm::perspective, glm::cross, glm::normalize, glm::radians;
 
-	enum Movement {
+	enum Movement
+	{
 		FRONT,
 		BACKWARD,
 		RIGHTWARD,
 		LEFTWARD
 	};
 
-	enum Type {
+	enum Type
+	{
 		PERSPECTIVE,
 		ORTHO
 	};
@@ -30,7 +34,8 @@ namespace Camera
 	const float SENSITIVITY = 0.1f;
 	float ZOOM = 70.0f;
 
-	class Viewport {
+	class Viewport
+	{
 		vec3 position;
 		mat4 worldToView;
 		mat4 viewToProjection;
@@ -40,16 +45,16 @@ namespace Camera
 
 		float yaw = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
 		float pitch = 0.0f;
-		float midScreenX = 800.0f / 2.0;
-		float midScreenY = 600.0f / 2.0;
+		float midScreenX = window_w / 2.0;
+		float midScreenY = window_h / 2.0;
 		float thetaDegrees;
 		float lastX = midScreenX;
 		float lastY = midScreenY;
 
 		float ZOOM = 70.0f; // fov in Degrees
 	public:
-		int wBound = (int)(BOUND_MULTIPLIER * SCREEN_WIDTH);
-		int hBound = (int)(BOUND_MULTIPLIER * SCREEN_HEIGHT);
+		int wBound = (int)(BOUND_MULTIPLIER * window_w);
+		int hBound = (int)(BOUND_MULTIPLIER * window_h);
 
 		vec3 FORWARD;
 		vec3 RIGHT;
@@ -99,8 +104,8 @@ namespace Camera
 		}
 		
 		void reset_xy_offset() {
-			lastX = SCREEN_WIDTH / 2;
-			lastY = SCREEN_HEIGHT / 2;
+			lastX = window_w / 2;
+			lastY = window_h / 2;
 		}
 		
 		mat4 look(float pitch, float yaw) { // broken af

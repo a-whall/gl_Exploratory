@@ -1,5 +1,16 @@
 #pragma once
 #include "GL/glew.h"
+#include <vector>
+#include <cmath>
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtc/type_ptr.hpp>
+#include <gtc/constants.hpp>
+#include <gtx/string_cast.hpp>
+#include "Vertex.h"
+
+using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
+using glm::lookAt, glm::perspective, glm::radians;
 
 namespace Scene { 
 	using glm::mat4, glm::vec3;
@@ -8,7 +19,7 @@ namespace Scene {
 	class Object { // needs a better name
 	protected:
 
-		int nVerts; // must be assigned from child, init_buffers
+		int nVerts; // must be assigned by child
 		mat4 model; // scene obj coordinate space
 		mat4 mv;    // "model to view" matrix storage
 
@@ -29,4 +40,6 @@ namespace Scene {
 		virtual mat4 getModel() final { return model; };
 		virtual void setModel(mat4 m) final { model = m; };
 	};
+
+
 }

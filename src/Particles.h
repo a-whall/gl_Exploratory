@@ -1,36 +1,38 @@
 #pragma once
-#include "Geometry.h"
+#include "Scene.h"
 #define MAX_NUM_PARTICLES_PER_D 1500
 
 using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 
 class Particles : public Scene::Object {
 
-    glm::ivec3 numParticles;
+    glm::ivec3 nParticles;
     unsigned totalParticles;
 
-    Vertex::Buffer<float>* attractor_vbo;
-    Vertex::Array* particleVAO;
-    Vertex::Array* attractor_vao;
-    Shader::Program* particleShader;
-    Shader::Program* computeShader;
+    Vertex::Array vao_particle;
+    Vertex::Array vao_attractor;
+    Shader::Program particle_shader;
+    Shader::Program compute_shader;
     
+    Vertex::Buffer<float, GL_ARRAY_BUFFER> vbo_attractor;
+    Vertex::BufferBase<float, GL_SHADER_STORAGE_BUFFER> vbo_pos;
+    Vertex::BufferBase<float, GL_SHADER_STORAGE_BUFFER> vbo_vel;
 
     float angle, rot_speed;
-    GLfloat attractor_pos_data[8];
+    float attractor_pos_data[8];
     vec3 att1_pos{-5.0f, 0.0f, 0.0f}, att2_pos{5.0f, 0.0f, 0.0f};
     mat4 rotationMatrix;
 
 public:
-    Particles(int numX, int numY, int numZ, Camera::Viewport &cam)
-        : Scene::Object(0.0f, 0.0f, 0.0f, cam), numParticles(numX, numY, numZ) {
+    Particles(int numX, int numY, int numZ, Camera::Viewport& cam)
+        : Scene::Object(0.0f, 0.0f, 0.0f, cam), nParticles(numX, numY, numZ),
+        particle_shader("src/Particle.glsl"), compute_shader("src/Gravity.glsl"),
+        vbo_pos(0, GL_DYNAMIC_DRAW), vbo_vel(1, GL_DYNAMIC_COPY),
+        vao_attractor(), vao_particle()
+    {
         std::cout << "Particles()\n\n";
         assert(numX < MAX_NUM_PARTICLES_PER_D); assert(numY < MAX_NUM_PARTICLES_PER_D); assert(numZ < MAX_NUM_PARTICLES_PER_D);
-        totalParticles = numParticles.x * numParticles.y * numParticles.z;
-        particleShader = new Shader::Program();
-        computeShader = new Shader::Program();
-        particleShader->create("src/Particle.glsl");
-        computeShader->create("src/Gravity.glsl");
+        totalParticles = nParticles.x * nParticles.y * nParticles.z;
         init_buffers();
         rotationMatrix = mat4(1.0f);
     }
@@ -39,49 +41,50 @@ public:
     {
         using std::vector;
 
-        // Initial positions for the particles
-        vector<float> initPos;
-        vector<float> initVel(totalParticles * 4, 0.0f);
+        // buffers for position and velocity of each particle, both will be vec4 in size, which does leave an extra float per particle.
+        unsigned nBufElements = totalParticles * 4;
+        unsigned pBufSize = nBufElements * sizeof(float);
+
+        
+        vbo_pos(nBufElements);
+        vbo_vel(nBufElements);
+        //vector<float> initPos;
+        //vector<float> initVel(totalParticles * 4, 0.0f);
 
         vec4 p(0.0f, 0.0f, 0.0f, 1.0f);
-        float dx = 2.0f / (numParticles.x - 1),
-            dy = 2.0f / (numParticles.y - 1),
-            dz = 2.0f / (numParticles.z - 1);
+        float dx = 2.0f / (nParticles.x - 1), dy = 2.0f / (nParticles.y - 1), dz = 2.0f / (nParticles.z - 1);
+
         // We want to center the particles at (0,0,0)
         mat4 transf = glm::translate(mat4(1.0f), vec3(-1, -1, -1));
-        for (int i = 0; i < numParticles.x; i++) {
-            for (int j = 0; j < numParticles.y; j++) {
-                for (int k = 0; k < numParticles.z; k++) {
+
+        // Set initial positions for the particles
+        for (int i = 0; i < nParticles.x; i++) {
+            for (int j = 0; j < nParticles.y; j++) {
+                for (int k = 0; k < nParticles.z; k++) {
                     p.x = dx * i;
                     p.y = dy * j;
                     p.z = dz * k;
                     p.w = 1.0f;
                     p = transf * p;
-                    initPos.push_back(p.x);
-                    initPos.push_back(p.y);
-                    initPos.push_back(p.z);
-                    initPos.push_back(p.w);
+                    vbo_pos + p.x; // should not be +, if anything overload << but maybe just make this a variadic function
+                    vbo_pos + p.y;
+                    vbo_pos + p.z;
+                    vbo_pos + p.w;
                 }
             }
         }
 
-        // buffers for position and velocity of each particle, both will be vec4 in size, which does leave an extra float 
-        unsigned particleBufferSize = totalParticles * 4 * sizeof(float);
-
-        Vertex::Buffer<float>* posBuf = new Vertex::Buffer<float>(GL_SHADER_STORAGE_BUFFER, particleBufferSize, &initPos[0], GL_DYNAMIC_DRAW, 0);//note: extra param on the end
-        posBuf->add_attribute<vec4>(0);
-        Vertex::Buffer<float>* velBuf = new Vertex::Buffer<float>(GL_SHADER_STORAGE_BUFFER, particleBufferSize, &initVel[0], GL_DYNAMIC_COPY, 1);
-        velBuf->add_attribute<vec4>(1);
+        vbo_pos.add_attribute<vec4>(0);
+        vbo_vel.add_attribute<vec4>(1);
 
         // Set up the VAO
-        particleVAO = new Vertex::Array();
-        particleVAO->bindBuffer(*posBuf);
+        //particle_vao = new Vertex::Array();
+        vao_particle.bindBuffer(vbo_pos);
 
-        // Set up a buffer and a VAO for drawing the attractors (the "black holes")
+        // Set up a buffer and a VAO for drawing the attractors
         set_attractor_positions();
-        attractor_vbo = new Vertex::Buffer<float>(GL_ARRAY_BUFFER, 8 * sizeof(float), attractor_pos_data, GL_DYNAMIC_DRAW);
-        attractor_vao = new Vertex::Array();
-        attractor_vao->bindBuffer(*attractor_vbo);
+        vbo_attractor(8 * sizeof(float));
+        vao_attractor.bindBuffer(vbo_attractor);
     }
 
     void update(float dt) override {
@@ -96,33 +99,33 @@ public:
         att2_pos = vec3( rotationMatrix * vec4(att2_pos, 1.0f) );
 
         // compute positions and velocities
-        computeShader->use();
-        computeShader->set("attractor1_pos", att1_pos);
-        computeShader->set("attractor2_pos", att2_pos);
+        compute_shader.use();
+        compute_shader.set("attractor1_pos", att1_pos);
+        compute_shader.set("attractor2_pos", att2_pos);
         glDispatchCompute(totalParticles / 1000, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         // Draw scene
-        particleShader->use();
+        particle_shader.use();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         model = mat4(1.0f);
         mat4 mv = cam.get_WorldToView_Matrix() * model;
         mat3 norm = mat3(vec3(mv[0]), vec3(mv[1]), vec3(mv[2]));
-        particleShader->set("MVP", cam.get_ViewToProjection_Matrix() * mv);
+        particle_shader.set("MVP", cam.get_ViewToProjection_Matrix() * mv);
 
         // Draw particles
         glPointSize(2.0f);
-        particleShader->set("Color", vec4(0.0f, 0.3f, 0.4f, 1.0f));
-        particleVAO->bind();
+        particle_shader.set("Color", vec4(0.0f, 0.3f, 0.4f, 1.0f));
+        vao_particle.bind();
         glDrawArrays(GL_POINTS, 0, totalParticles);
 
         // Draw the attractors
         glPointSize(5.0f);
         set_attractor_positions();
-        attractor_vbo->subData(GL_ARRAY_BUFFER, 8 * sizeof(float), attractor_pos_data);
+        vbo_attractor.subData(GL_ARRAY_BUFFER, 8 * sizeof(float), attractor_pos_data);
 
-        particleShader->set("Color", vec4(1.0f, 1.0f, 0.0f, 1.0f));
-        attractor_vao->bind();
+        particle_shader.set("Color", vec4(1.0f, 1.0f, 0.0f, 1.0f));
+        vao_attractor.bind();
         glDrawArrays(GL_POINTS, 0, 2);
     }
 

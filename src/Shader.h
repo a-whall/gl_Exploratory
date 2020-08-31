@@ -18,7 +18,7 @@ namespace Shader
 	using std::vector, std::string, std::stringstream, std::ifstream;
 	using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 
-	enum Type : int { NONE = -1, VERT = 0, TESC = 1, TESE = 2, GEOM = 3, FRAG = 4, COMP = 5 };//if this works it will be funny but also indicate that t should never be -1
+	enum Type : int { NONE = -1, VERT = 0, TESC = 1, TESE = 2, GEOM = 3, FRAG = 4, COMP = 5 };
 
 	class Compiler
 	{
@@ -156,7 +156,6 @@ namespace Shader
 		}
     };
 
-
 	class Debugger
 	{
 		GLuint* programHandle;
@@ -255,7 +254,6 @@ namespace Shader
 		}
 	};
 
-
 	class Program
 	{
 		std::unordered_map<const char*, int> uniformLocationCache;
@@ -279,7 +277,12 @@ namespace Shader
 			delete debugger;
 		}
 
-		void use() const { glUseProgram(handle); }
+		void use() const { 
+			//auto t1 = std::chrono::high_resolution_clock::now();
+			glUseProgram(handle);
+			//auto t2 = std::chrono::high_resolution_clock::now();
+			//std::cout << "glUseProgram(): " << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() << " ns\n";
+		}
 
 		void create(const char* fileName) { compiler->createShadersFrom(fileName); }
 

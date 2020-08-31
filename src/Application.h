@@ -1,6 +1,4 @@
 #pragma once
-constexpr int SCREEN_WIDTH = 800;
-constexpr int SCREEN_HEIGHT = 640;
 #include <chrono>
 #include <iostream>
 #include <GL/glew.h>
@@ -28,9 +26,11 @@ class Application
 
 public:
 	
+	Vertex::Array* cube_vao;
+
 	Camera::Viewport* cam;
 
-	Particles* particles;
+	//Particles* particles;
 	Scene::Object* cube;
 	Scene::Object* sphere;
 	Scene::Object* pointSprites;
@@ -40,6 +40,7 @@ public:
 
 	void init(const char* title, int x, int y, int w, int h, int fullscreen) {
 		initializeFramework_createWindow(title, x, y, w, h, fullscreen);
+		Camera::window_w = w, Camera::window_h = h;
 		cam = new Camera::Viewport(vec3(0.0f, 0.0f, 3.0f), vec3(0.0f, 0.0f, -1.0f), radians(70.0f), 0.1f, 1000.0f);
 		prep_scene();
 	}
@@ -68,21 +69,21 @@ public:
 	void update( float timeStep )
 	{
 		//particles->update(timeStep);
-		//cube->update(timeStep);
+		cube->update(timeStep);
 		//sphere->update(timeStep);
-		pointSprites->update(timeStep);
+		//pointSprites->update(timeStep);
 	}
 	void render()
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		particles->render();
+		//particles->render();
 
-		//phongShader->use();
-		//cube->render();
+		phongShader->use();
+		cube->render();
 		//sphere->render();
 
-		pointSprites->render();
+		//pointSprites->render();
 
 		SDL_GL_SwapWindow(window); // render back buffer to the screen
 	}
@@ -109,15 +110,17 @@ private:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
-		//phongShader = new Shader::Program("src/Phong.glsl");
-		//set_phong_uniforms(*phongShader);
-		//cube = new Cube(0.0f, 0.0f, -1.0f, *cam, *phongShader);
+		cube_vao = new Vertex::Array();
+		cube_vao->bind();
+		phongShader = new Shader::Program("src/Phong.glsl");
+		set_phong_uniforms(*phongShader);
+		cube = new Cube(0.0f, 0.0f, -1.0f, *cam, *phongShader);
 		//sphere = new Sphere(-3.0f, 2.0f, 2.0f, *cam, *phongShader);
 
-		pointSpriteShader = new Shader::Program("src/PointSprites.glsl");
-		pointSprites = new PointSprites("media/diamond_ore.png",*cam, *pointSpriteShader);
+		//pointSpriteShader = new Shader::Program("src/PointSprites.glsl");
+		//pointSprites = new PointSprites("media/diamond_ore.png",*cam, *pointSpriteShader);
 
-		particles = new Particles(20, 20, 20, *cam);
+		//particles = new Particles(20, 20, 20, *cam);
 	}
 
 	void set_phong_uniforms(Shader::Program &shader) {
@@ -145,23 +148,16 @@ private:
 
 	void initializeFramework_createWindow(const char* title, int x, int y, int w, int h, int fullscreen)
 	{
-		//auto t1 = std::chrono::high_resolution_clock::now();
 		if (SDL_Init(SDL_INIT_VIDEO) > -1) {// initialize SDL for its Video (opengl uses this) & Event features
 			
-			if (!IMG_Init(IMG_INIT_PNG)) // SDL_image for texture loading
+			if (IMG_Init(IMG_INIT_PNG) > 0) // SDL_image for texture loading
 				std::cout << IMG_GetError() << "\n"; 
 
 			window = SDL_CreateWindow(title, x, y, w, h, fullscreen);
 			context = SDL_GL_CreateContext(window);
-			keyStates = SDL_GetKeyboardState(NULL);
-			linkGLAPI();
-			submitDebugCallbackFunction();
-			
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			keyStates = SDL_GetKeyboardState(nullptr);
 
-			//testGLEW();
-			//showExtensions();
-			//setMusic("03 sleep.mp3");
+			linkGLAPI();
 			
 			running = true;
 			std::cout << "SDL_GL_Initialized\n";
@@ -170,8 +166,6 @@ private:
 			std::cout << SDL_GetError();
 			exit(EXIT_FAILURE);
 		}
-		//auto t2 = std::chrono::high_resolution_clock::now();
-		//std::cout << "initializeFramework_createWindow: " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() << " us\n";
 	}
 	void specifyGL()
 	{ // specify the version of openGL associated with current GPU driver, as well as other context attributes
@@ -187,6 +181,8 @@ private:
 		specifyGL();
 		glewExperimental = GL_TRUE; //"glewExperimental": global bool decides whether extensions from pre-release or experimental
 		glewInit();                 // drivers are exposed (as long as the functions they contain have valid entry points)
+		submitDebugCallbackFunction();
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	}
 	void testGLEW() {
 		GLuint vertexBuffer; glGenBuffers(1, &vertexBuffer);

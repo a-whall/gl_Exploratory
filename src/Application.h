@@ -26,12 +26,13 @@ class Application
 
 public:
 	
-	Vertex::Array* cube_vao;
+	//Vertex::Array* cube_vao;
 
 	Camera::Viewport* cam;
 
 	//Particles* particles;
 	Scene::Object* cube;
+	Scene::Object* cube2;
 	Scene::Object* sphere;
 	Scene::Object* pointSprites;
 
@@ -66,10 +67,11 @@ public:
 		if (keyStates[SDL_SCANCODE_S]) cam->move(-.1f, cam->FORWARD);
 		if (keyStates[SDL_SCANCODE_SPACE])  cam->move(0.1f, cam->UP);
 	}
-	void update( float timeStep )
+	void update( float t )
 	{
 		//particles->update(timeStep);
-		cube->update(timeStep);
+		cube->update(t);
+		cube2->update(t);
 		//sphere->update(timeStep);
 		//pointSprites->update(timeStep);
 	}
@@ -81,6 +83,7 @@ public:
 
 		phongShader->use();
 		cube->render();
+		cube2->render();
 		//sphere->render();
 
 		//pointSprites->render();
@@ -110,11 +113,12 @@ private:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
-		cube_vao = new Vertex::Array();
-		cube_vao->bind();
+		//cube_vao = new Vertex::Array();
+		//cube_vao->bind();
 		phongShader = new Shader::Program("src/Phong.glsl");
 		set_phong_uniforms(*phongShader);
 		cube = new Cube(0.0f, 0.0f, -1.0f, *cam, *phongShader);
+		cube2 = new Cube(0.0f, 2.0f, 1.0f, *cam, *phongShader);
 		//sphere = new Sphere(-3.0f, 2.0f, 2.0f, *cam, *phongShader);
 
 		//pointSpriteShader = new Shader::Program("src/PointSprites.glsl");

@@ -1,22 +1,30 @@
 #pragma once
 #include "Geometry.h"
 
+namespace CubeGeom {
+    // instanced data
+}
+
 class Cube: public Scene::Object
 {
     float side = 1.0f; // unit cube
 
+    Vertex::Array vao;
+    Vertex::Buffer<float> vbo;
+    Vertex::Index ebo;
     std::vector<float> vertexBufferData;
+    
 
 public:
 
     Cube(float x, float y, float z, Camera::Viewport& cam, Shader::Program& shader)
-        : Scene::Object(x, y, z, cam, &shader) {
+        : Scene::Object(x, y, z, cam, &shader), vao(), vbo(), ebo() {
         init_buffers();
     }
     
     void init_buffers() override {
         GLfloat side2 = side / 2.0f;
-        std::vector<GLfloat> data = { // listed per vertex : vec3 pos, vec3 normal, vec2 texCoords
+        vbo = { // listed per vertex : vec3 pos, vec3 normal, vec2 texCoords
             // Front
            -side2, -side2,  side2,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
             side2, -side2,  side2,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
@@ -49,7 +57,7 @@ public:
          -side2,  side2, -side2,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
         };
 
-        std::vector<GLuint> el = {
+        ebo = {
             0,1,2,0,2,3,
             4,5,6,4,6,7,
             8,9,10,8,10,11,
@@ -58,8 +66,11 @@ public:
             20,21,22,20,22,23
         };
 
-        nVerts = el.size();
-        Geom::makeTriangleMeshBuffers(&el, &data, true, true, false);
+        nVerts = ebo.getNumElements();
+
+        vao.bindBuffers(ebo, vbo, true, true, false);
+
+        //Geom::makeTriangleMeshBuffers(&el, &data, true, true, false);
     }
 
     void update(float t) override {
@@ -68,6 +79,7 @@ public:
     }
 
     void render() override {  // TODO: fix bug where cube (and sphere) dont have vao to bind when rendering multiple objects
+        vao.bind();
         glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, 0);
     }
 

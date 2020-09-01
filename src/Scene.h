@@ -16,6 +16,8 @@ namespace Scene {
 	using glm::mat4, glm::vec3;
     using std::vector;
 
+	unsigned currentlyBoundVaoHandle = 0;
+
 	class Object { // needs a better name
 	protected:
 

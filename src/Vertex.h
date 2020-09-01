@@ -2,10 +2,12 @@
 #include <GL/glew.h>
 #include <vector>
 #include <glm.hpp>
+#include "Scene.h"
 
-namespace Vertex {
+namespace Vertex
+{
 	using glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4;
-	using std::vector;
+	using std::vector, std::initializer_list;
 
 	struct Attribute
 	{
@@ -17,7 +19,7 @@ namespace Vertex {
 		bool instanced; // implicit bool to int used as attrib divisor. false = per vertex, true = per instance
 	};
 
-	struct Data
+	struct DataLayout
 	{
 		vector<Attribute> attribs;
 		unsigned nBytes = 0;
@@ -35,39 +37,43 @@ namespace Vertex {
 		}
 	};
 
-	template<typename T>
+	template<typename T, GLenum BindingTarget = GL_ARRAY_BUFFER>
 	class Buffer
 	{
 	protected:
-		Data* format;
+		DataLayout* layout;
+		vector<T> data_vec;
 
 	public:
 
 		unsigned handle;
 
-		Buffer(unsigned size, T data[], GLenum usageHint) : format{ new Data() } {
-			gl_genBuffer<T>(GL_ARRAY_BUFFER, size, data, usageHint);//basic buffer = array buffer
+		Buffer() : data_vec(0), layout{ new DataLayout() } {
+			gl_genDynamicBuffer();
 		}
-		Buffer(GLenum bindingTarget, unsigned size, T data[], GLenum usageHint) : format{ new Data() } {
-			gl_genBuffer<T>(bindingTarget, size, data, usageHint);
+		Buffer(unsigned size, T data[], GLenum usageHint) : layout{ new DataLayout() } {
+			gl_genBuffer<T>(size, data, usageHint);//basic buffer = array buffer
 		}
-		Buffer(GLenum bindingTarget, unsigned size, float data[], GLenum usageHint, unsigned bindingIndex) : format{ new Data() } {
-			gl_genBufferBase<T>(bindingTarget, size, data, usageHint, bindingIndex);//for mapping buffers to a binding target index
+		Buffer(GLenum bindingTarget, unsigned size, T data[], GLenum usageHint) : layout{ new DataLayout() } {
+			gl_genBuffer<T>(size, data, usageHint);
+		}
+		Buffer(GLenum bindingTarget, unsigned size, float data[], GLenum usageHint, unsigned bindingIndex) : layout{ new DataLayout() } {
+			gl_genBufferBase<T>(size, data, usageHint, bindingIndex);//for mapping buffers to a binding target index
 		}
 		~Buffer() {
 			glDeleteBuffers(1, &handle);
-			delete format;
+			delete layout;
 		}
 
 		virtual void bind() const { glBindBuffer(GL_ARRAY_BUFFER, handle); }
 
 		template<typename T> void add_attribute(int index, bool = false) { static_assert(false); }
-		template<> inline void add_attribute<float>(int i, bool perInst) { format->push<float>(1, i, perInst); }
-		template<> inline void add_attribute<vec2>(int i, bool perInst) { format->push<float>(2, i, perInst); }
-		template<> inline void add_attribute<vec3>(int i, bool perInst) { format->push<float>(3, i, perInst); }
-		template<> inline void add_attribute<vec4>(int i, bool perInst) { format->push<float>(4, i, perInst); }
-		template<> inline void add_attribute<mat3>(int i, bool perInst) { format->push<float>(4, i, perInst); } //TODO
-		template<> inline void add_attribute<mat4>(int i, bool perInst) { format->push<float>(4, i, perInst); } //TODO
+		template<> inline void add_attribute<float>(int i, bool perInst) { layout->push<float>(1, i, perInst); }
+		template<> inline void add_attribute<vec2>(int i, bool perInst) { layout->push<float>(2, i, perInst); }
+		template<> inline void add_attribute<vec3>(int i, bool perInst) { layout->push<float>(3, i, perInst); }
+		template<> inline void add_attribute<vec4>(int i, bool perInst) { layout->push<float>(4, i, perInst); }
+		template<> inline void add_attribute<mat3>(int i, bool perInst) { layout->push<float>(4, i, perInst); } //TODO
+		template<> inline void add_attribute<mat4>(int i, bool perInst) { layout->push<float>(4, i, perInst); } //TODO
 
 		void subData(GLenum bufferType, unsigned size, float data[]) {
 			bind();
@@ -76,31 +82,47 @@ namespace Vertex {
 
 		void enable_attributes() {
 			bind();
-			for (Attribute a : format->attribs) {
+			for (Attribute a : layout->attribs) {
 				glEnableVertexAttribArray(a.index);
-				glVertexAttribPointer(a.index, a.count, a.type, a.normalized, format->nBytes, (void*)a.offset);
+				glVertexAttribPointer(a.index, a.count, a.type, a.normalized, layout->nBytes, (void*)a.offset);
 				glVertexAttribDivisor(a.index, a.instanced);
 			}
 		}
 
+		int getNumElements() {
+			return data_vec.size();
+		}
+
+		void operator=(initializer_list<T> data) {
+			data_vec.insert(data_vec.end(), data);
+			gl_genBuffer(data_vec.size() * sizeof(T), data_vec.data(), GL_STATIC_DRAW);
+		}//need alternate method of calling genBuffer for when algorithmically generating data
+
 	private:
 
-		template <typename T>
-		void gl_genBuffer(GLenum bindingTarget, unsigned size, T data[], GLenum usageHint) {
+		void gl_genDynamicBuffer() {
 			glGenBuffers(1, &handle);
-			glBindBuffer(bindingTarget, handle);
-			glBufferData(bindingTarget, size, data, usageHint);
 		}
+
 		template <typename T>
-		void gl_genBufferBase(GLenum bindingTarget, unsigned size, T data[], GLenum usageHint, unsigned bindingIndex) {
+		void gl_genBuffer(unsigned size, T data[], GLenum usageHint) {
 			glGenBuffers(1, &handle);
-			glBindBufferBase(bindingTarget, bindingIndex, handle);
-			glBufferData(bindingTarget, size, data, usageHint);
+			glBindBuffer(BindingTarget, handle);
+			glBufferData(BindingTarget, size, data, usageHint);
+		}
+		
+		template <typename T>
+		void gl_genBufferBase( unsigned size, T data[], GLenum usageHint, unsigned bindingIndex) {
+			glGenBuffers(1, &handle);
+			glBindBufferBase(BindingTarget, bindingIndex, handle);
+			glBufferData(BindingTarget, size, data, usageHint);
 		}
 	};
 
-	struct Index : Buffer<unsigned>
+	struct Index : public Buffer<unsigned>
 	{
+		using Buffer::operator=;
+		Index() : Index(0u, nullptr, GL_STATIC_DRAW) {}
 		Index(unsigned size, GLuint data[], GLenum usageHint)
 			: Buffer<unsigned>(GL_ELEMENT_ARRAY_BUFFER, size, data, usageHint) {}
 		void bind() const override { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); }
@@ -114,10 +136,29 @@ namespace Vertex {
 		Array() { glGenVertexArrays(1, &handle); }
 		~Array() { glDeleteVertexArrays(1, &handle); }
 
-		void bind() const { glBindVertexArray(handle); }
+		void bind() const { 
+			if (Scene::currentlyBoundVaoHandle == handle)
+				return;
+			glBindVertexArray(handle);
+		}
 		
 		template<typename T> void bindBuffer(Buffer<T> &vbo) {
 			bind();
+			vbo.enable_attributes();
+		}
+
+		template<typename T> void bindBuffers(Index& ebo, Buffer<T>& vbo, bool hasNorm, bool hasTC, bool hasTan) {
+			bind();
+			ebo.bind();
+			vbo.bind();
+			vbo.add_attribute<vec3>(0);
+			if (hasNorm)
+				vbo.add_attribute<vec3>(1);
+			if (hasTC)
+				vbo.add_attribute<vec2>(2);
+			if (hasTan)
+				vbo.add_attribute<vec3>(3);
+
 			vbo.enable_attributes();
 		}
 	};

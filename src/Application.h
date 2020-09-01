@@ -1,16 +1,12 @@
 #pragma once
-#include <chrono>
-#include <iostream>
 #include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
-#include <SDL_opengl.h>
 #include "Camera.h"
 #include "Shader.h"
 #include "SceneObjects.h"
 #include "Debug.h"
-
 
 using glm::vec3, glm::vec4, glm::mat4;
 using glm::radians;
@@ -26,8 +22,6 @@ class Application
 
 public:
 	
-	//Vertex::Array* cube_vao;
-
 	Camera::Viewport* cam;
 
 	//Particles* particles;
@@ -69,25 +63,13 @@ public:
 	}
 	void update( float t )
 	{
-		//particles->update(timeStep);
 		cube->update(t);
-		cube2->update(t);
-		//sphere->update(timeStep);
-		//pointSprites->update(timeStep);
 	}
 	void render()
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		//particles->render();
-
 		phongShader->use();
 		cube->render();
-		cube2->render();
-		//sphere->render();
-
-		//pointSprites->render();
-
 		SDL_GL_SwapWindow(window); // render back buffer to the screen
 	}
 	void clean()
@@ -110,21 +92,10 @@ private:
 	void prep_scene() {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_MULTISAMPLE);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
-		//cube_vao = new Vertex::Array();
-		//cube_vao->bind();
 		phongShader = new Shader::Program("src/Phong.glsl");
 		set_phong_uniforms(*phongShader);
 		cube = new Cube(0.0f, 0.0f, -1.0f, *cam, *phongShader);
-		cube2 = new Cube(0.0f, 2.0f, 1.0f, *cam, *phongShader);
-		//sphere = new Sphere(-3.0f, 2.0f, 2.0f, *cam, *phongShader);
-
-		//pointSpriteShader = new Shader::Program("src/PointSprites.glsl");
-		//pointSprites = new PointSprites("media/diamond_ore.png",*cam, *pointSpriteShader);
-
-		//particles = new Particles(20, 20, 20, *cam);
 	}
 
 	void set_phong_uniforms(Shader::Program &shader) {
@@ -152,24 +123,25 @@ private:
 
 	void initializeFramework_createWindow(const char* title, int x, int y, int w, int h, int fullscreen)
 	{
-		if (SDL_Init(SDL_INIT_VIDEO) > -1) {// initialize SDL for its Video (opengl uses this) & Event features
-			
-			if (IMG_Init(IMG_INIT_PNG) > 0) // SDL_image for texture loading
-				std::cout << IMG_GetError() << "\n"; 
-
-			window = SDL_CreateWindow(title, x, y, w, h, fullscreen);
-			context = SDL_GL_CreateContext(window);
-			keyStates = SDL_GetKeyboardState(nullptr);
-
-			linkGLAPI();
-			
-			running = true;
-			std::cout << "SDL_GL_Initialized\n";
-		}
-		else {
-			std::cout << SDL_GetError();
-			exit(EXIT_FAILURE);
-		}
+		startSDL();
+		window = SDL_CreateWindow(title, x, y, w, h, fullscreen);
+		context = SDL_GL_CreateContext(window);
+		keyStates = SDL_GetKeyboardState(nullptr);
+		linkGLAPI();
+		running = true;
+		std::cout << "SDL_OGL_Initialized\n";
+	}
+	void startSDL() {
+		if (SDL_Init(SDL_INIT_VIDEO) < 0) abort_MyGL_App("SDL initialization failed: ", SDL_GetError() );
+		if (IMG_Init(IMG_INIT_PNG) == 0) std::cout << "SDL_image initialization (PNG) failed: " << IMG_GetError() << "\n\n";
+	}
+	void linkGLAPI()
+	{// use GL-extensions-wrangler library to dynamically link gl functionality
+		specifyGL();
+		glewExperimental = GL_TRUE; //"glewExperimental": global bool decides whether extensions from pre-release or experimental
+		glewInit();                 //        drivers are exposed (as long as the functions they contain have valid entry points)
+		submitDebugCallbackFunction();
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	}
 	void specifyGL()
 	{ // specify the version of openGL associated with current GPU driver, as well as other context attributes
@@ -180,18 +152,10 @@ private:
 		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4); // MultiSample-Anti-Aliasing for less pixelated edges
 	}
-	void linkGLAPI()
-	{// use GL-extensions-wrangler library to dynamically link gl functionality
-		specifyGL();
-		glewExperimental = GL_TRUE; //"glewExperimental": global bool decides whether extensions from pre-release or experimental
-		glewInit();                 // drivers are exposed (as long as the functions they contain have valid entry points)
-		submitDebugCallbackFunction();
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	}
 	void testGLEW() {
 		GLuint vertexBuffer; glGenBuffers(1, &vertexBuffer);
 		if (vertexBuffer == 1) {
-			std::cout << "GLEW successful\n\n";
+			std::cout << "\nGLEW successful\n";
 			glDeleteBuffers(1, &vertexBuffer);
 		}
 	}

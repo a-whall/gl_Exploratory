@@ -69,8 +69,6 @@ public:
         nVerts = ebo.getNumElements();
 
         vao.bindBuffers(ebo, vbo, true, true, false);
-
-        //Geom::makeTriangleMeshBuffers(&el, &data, true, true, false);
     }
 
     void update(float t) override {

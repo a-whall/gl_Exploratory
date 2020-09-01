@@ -139,6 +139,7 @@ namespace Vertex
 			if (Scene::currentlyBoundVaoHandle == handle)
 				return;
 			glBindVertexArray(handle);
+			Scene::currentlyBoundVaoHandle = handle;
 		}
 		
 		template<typename T> void bindBuffer(Buffer<T> &vbo) {

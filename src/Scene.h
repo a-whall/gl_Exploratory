@@ -18,7 +18,8 @@ namespace Scene {
 
 	unsigned currentlyBoundVaoHandle = 0;
 
-	class Object { // needs a better name
+	class Object
+	{// needs a better name
 	protected:
 
 		int nVerts; // must be assigned by child

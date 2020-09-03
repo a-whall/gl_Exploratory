@@ -136,7 +136,7 @@ namespace Vertex
 		~Array() { glDeleteVertexArrays(1, &handle); }
 
 		void bind() const { 
-			if (Scene::currentlyBoundVaoHandle == handle)
+			if (handle == Scene::currentlyBoundVaoHandle)
 				return;
 			glBindVertexArray(handle);
 			Scene::currentlyBoundVaoHandle = handle;

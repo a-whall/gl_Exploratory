@@ -15,7 +15,7 @@ class Application
 {
 	SDL_Window* window;
 	SDL_GLContext context;
-	SDL_Event event;
+	SDL_Event ev;
 	const Uint8* keyStates;
 	Mix_Music* music;
 	bool running = false;
@@ -35,31 +35,14 @@ public:
 
 	void init(const char* title, int x, int y, int w, int h, int fullscreen) {
 		initializeFramework_createWindow(title, x, y, w, h, fullscreen);
-		Camera::setWindowDimmensions(w, h);
-		cam = new Camera::Viewport(vec3(0.0f, 0.0f, 3.0f), vec3(0.0f, 0.0f, -1.0f), radians(70.0f), 0.1f, 1000.0f);
+		initialize_camera(w, h);
 		prep_scene();
 	}
 
-	void handleEvents() {
-		SDL_PollEvent(&event);
-		if (event.type == SDL_MOUSEMOTION) 
-			cam->mouse_motion(event.motion.x, event.motion.y);
-		if (event.type == SDL_MOUSEWHEEL)  
-			cam->mouse_scroll(event.wheel.y);
-		if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_ENTER)
-			cam->set_firstMouse(true);
-		if (event.type == SDL_QUIT)	       
-			running = false;
-		if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_ESCAPE)
-			running = false;
-		
-		SDL_PumpEvents();
-		if (keyStates[SDL_SCANCODE_A]) cam->move(-.1f, cam->RIGHT);
-		if (keyStates[SDL_SCANCODE_W]) cam->move(0.1f, cam->FORWARD);
-		if (keyStates[SDL_SCANCODE_LSHIFT]) cam->move(-.1f, cam->UP);
-		if (keyStates[SDL_SCANCODE_D]) cam->move(0.1f, cam->RIGHT); 
-		if (keyStates[SDL_SCANCODE_S]) cam->move(-.1f, cam->FORWARD);
-		if (keyStates[SDL_SCANCODE_SPACE])  cam->move(0.1f, cam->UP);
+	void handleEvents()
+	{
+		poll_events();
+		get_keystates();
 	}
 	void update( float t )
 	{
@@ -131,6 +114,10 @@ private:
 		running = true;
 		std::cout << "SDL_OGL_Initialized\n";
 	}
+	void initialize_camera(int w, int h) {
+		Camera::setWindowDimmensions(w, h);
+		cam = new Camera::Viewport(vec3(0.0f, 0.0f, 3.0f), vec3(0.0f, 0.0f, -1.0f), 1.25f);
+	}
 	void startSDL() {
 		if (SDL_Init(SDL_INIT_VIDEO) < 0) abort_MyGL_App("SDL initialization failed: ", SDL_GetError() );
 		if (IMG_Init(IMG_INIT_PNG) == 0) std::cout << "SDL_image initialization (PNG) failed: " << IMG_GetError() << "\n\n";
@@ -176,5 +163,24 @@ private:
 		if (music != nullptr) Mix_PlayMusic(music, -1);
 
 		else std::cout << Mix_GetError() << "\n";
+	}
+	void poll_events()
+	{// pop SDL event queue, store event in member ev
+		SDL_PollEvent(&ev);
+		if (ev.type == SDL_MOUSEMOTION) cam->mouse_motion(ev.motion.x, ev.motion.y);
+		if (ev.type == SDL_MOUSEWHEEL)  cam->mouse_scroll(ev.wheel.y);
+		if (ev.type == SDL_WINDOWEVENT && ev.window.event == SDL_WINDOWEVENT_ENTER) cam->set_firstMouse(true);
+		if (ev.type == SDL_QUIT) running = false;
+		if (ev.type == SDL_KEYUP && ev.key.keysym.sym == SDLK_ESCAPE) running = false;
+	}
+	void get_keystates()
+	{
+		SDL_PumpEvents();
+		if (keyStates[SDL_SCANCODE_A]) cam->move(-.1f, cam->RIGHT);
+		if (keyStates[SDL_SCANCODE_W]) cam->move(0.1f, cam->FORWARD);
+		if (keyStates[SDL_SCANCODE_LSHIFT]) cam->move(-.1f, cam->UP);
+		if (keyStates[SDL_SCANCODE_D]) cam->move(0.1f, cam->RIGHT);
+		if (keyStates[SDL_SCANCODE_S]) cam->move(-.1f, cam->FORWARD);
+		if (keyStates[SDL_SCANCODE_SPACE])  cam->move(0.1f, cam->UP);
 	}
 };

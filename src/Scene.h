@@ -7,7 +7,6 @@
 #include <gtc/type_ptr.hpp>
 #include <gtc/constants.hpp>
 #include <gtx/string_cast.hpp>
-#include "Vertex.h"
 
 using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 using glm::lookAt, glm::perspective, glm::radians;

@@ -1,5 +1,5 @@
 #pragma once
-#include "Geometry.h"
+#include "vertex.h"
 
 namespace CubeGeom {
     // instanced data
@@ -12,9 +12,7 @@ class Cube: public Scene::Object
     Vertex::Array vao;
     Vertex::Buffer<float> vbo;
     Vertex::Index ebo;
-    std::vector<float> vertexBufferData;
     
-
 public:
 
     Cube(float x, float y, float z, Camera::Viewport& cam, Shader::Program& shader)
@@ -24,37 +22,37 @@ public:
     
     void init_buffers() override {
         GLfloat side2 = side / 2.0f;
-        vbo = { // listed per vertex : vec3 pos, vec3 normal, vec2 texCoords
+        vbo = { // listed per vertex : pos, normal, texCoords, (vec3) (vec3) (vec2)
             // Front
            -side2, -side2,  side2,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
             side2, -side2,  side2,    0.0f, 0.0f, 1.0f,    1.0f, 0.0f,
             side2,  side2,  side2,    0.0f, 0.0f, 1.0f,    1.0f, 1.0f,
            -side2,  side2,  side2,    0.0f, 0.0f, 1.0f,    0.0f, 1.0f,
-           // Right
-           side2, -side2,  side2,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
-           side2, -side2, -side2,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
-           side2,  side2, -side2,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
-           side2,  side2,  side2,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
-           // Back
-          -side2, -side2, -side2,    0.0f, 0.0f,-1.0f,    0.0f, 0.0f,
-          -side2,  side2, -side2,    0.0f, 0.0f,-1.0f,    1.0f, 0.0f,
-           side2,  side2, -side2,    0.0f, 0.0f,-1.0f,    1.0f, 1.0f,
-           side2, -side2, -side2,    0.0f, 0.0f,-1.0f,    0.0f, 1.0f,
-           // Left
-          -side2, -side2,  side2,   -1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
-          -side2,  side2,  side2,   -1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
-          -side2,  side2, -side2,   -1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
-          -side2, -side2, -side2,   -1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
-          // Bottom
-         -side2, -side2,  side2,    0.0f,-1.0f, 0.0f,    0.0f, 0.0f,
-         -side2, -side2, -side2,    0.0f,-1.0f, 0.0f,    1.0f, 0.0f,
-          side2, -side2, -side2,    0.0f,-1.0f, 0.0f,    1.0f, 1.0f,
-          side2, -side2,  side2,    0.0f,-1.0f, 0.0f,    0.0f, 1.0f,
-          // Top
-         -side2,  side2,  side2,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f,
-          side2,  side2,  side2,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
-          side2,  side2, -side2,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
-         -side2,  side2, -side2,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
+            // Right
+            side2, -side2,  side2,    1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
+            side2, -side2, -side2,    1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
+            side2,  side2, -side2,    1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
+            side2,  side2,  side2,    1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
+            // Back
+           -side2, -side2, -side2,    0.0f, 0.0f,-1.0f,    0.0f, 0.0f,
+           -side2,  side2, -side2,    0.0f, 0.0f,-1.0f,    1.0f, 0.0f,
+            side2,  side2, -side2,    0.0f, 0.0f,-1.0f,    1.0f, 1.0f,
+            side2, -side2, -side2,    0.0f, 0.0f,-1.0f,    0.0f, 1.0f,
+            // Left
+           -side2, -side2,  side2,   -1.0f, 0.0f, 0.0f,    0.0f, 0.0f,
+           -side2,  side2,  side2,   -1.0f, 0.0f, 0.0f,    1.0f, 0.0f,
+           -side2,  side2, -side2,   -1.0f, 0.0f, 0.0f,    1.0f, 1.0f,
+           -side2, -side2, -side2,   -1.0f, 0.0f, 0.0f,    0.0f, 1.0f,
+            // Bottom
+           -side2, -side2,  side2,    0.0f,-1.0f, 0.0f,    0.0f, 0.0f,
+           -side2, -side2, -side2,    0.0f,-1.0f, 0.0f,    1.0f, 0.0f,
+            side2, -side2, -side2,    0.0f,-1.0f, 0.0f,    1.0f, 1.0f,
+            side2, -side2,  side2,    0.0f,-1.0f, 0.0f,    0.0f, 1.0f,
+            // Top
+           -side2,  side2,  side2,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f,
+            side2,  side2,  side2,    0.0f, 1.0f, 0.0f,    1.0f, 0.0f,
+            side2,  side2, -side2,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
+           -side2,  side2, -side2,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
         };
 
         ebo = {

@@ -42,6 +42,4 @@ namespace Scene {
 		virtual mat4 getModel() final { return model; };
 		virtual void setModel(mat4 m) final { model = m; };
 	};
-
-
 }

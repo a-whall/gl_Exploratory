@@ -1,30 +1,26 @@
 #pragma once
 #include "vertex.h"
 
-
-
 class Sphere : public Scene::Object
 {
 	
-	const int nSlices = 300, nStacks = 300;
+	const int nSlices = 20, nStacks = 20;
 	const int numUniqVerts = (nSlices + 1) * (nStacks + 1),
 		      numElements = (nSlices * 2 * (nStacks - 1)) * 3;
 
 	float radius = 1.0f; // unit sphere
-	Vertex::MeshArray vao;
+	Vertex::Array vao;
 	Vertex::Buffer<float> vbo;
 	Vertex::Index ebo;
 
 public:
 
 	Sphere(float x, float y, float z, Camera::Viewport& cam, Shader::Program& shader)
-		: Scene::Object(x, y, z, cam, &shader), vbo(3 * numUniqVerts + 3 * numUniqVerts + 2 * numUniqVerts), ebo(numElements)
+		: Scene::Object(x, y, z, cam, &shader),
+		vbo(3 * numUniqVerts + 3 * numUniqVerts + 2 * numUniqVerts),
+		ebo(numElements)
 	{
-		std::cout << "sphere()\n";
 		init_buffers();
-		model = glm::mat4(1.0f); // identity matrix - leave the object coordinates at world origin.
-		model = glm::translate(model, vec3(1.0f, 1.0f, -1.0f));
-		model = glm::rotate(model, glm::radians(90.0f), vec3(0.0f, 0.0f, 1.0f));
 	}
 	void init_buffers() override {
 		// Generate positions, normals, texture coordinates in a single data buffer
@@ -85,8 +81,12 @@ public:
 				}
 			}
 		}
-		//Geom::makeTriangleMeshBuffers(&el, &data, true, true, false);
+		// ugly: until I think of how gl-side buffers can be automatically filled when algorithmically generating vertex data. maybe a generate functor which can be supplied to a generic generate() which finishes by allocating the buffer before returning.
+		ebo.applyData();
+		vbo.applyData();
+
 		nVerts = ebo.getNumElements();
+		vao.bindBuffers(ebo, vbo, true, true, false);
 	}
 	void update(float timeStep) override {
 		set_uniforms();
@@ -95,7 +95,7 @@ public:
 	
 	void render() {
 		vao.bind();
-		glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, 0);
 	}
 
 private:

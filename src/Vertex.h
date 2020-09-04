@@ -43,12 +43,15 @@ namespace Vertex
 	protected:
 		DataLayout layout;
 		vector<T> data_vec;
-
+		bool generated = false;
 	public:
 
 		unsigned handle;
 
 		Buffer() : data_vec(0), layout() {
+			gl_genDynamicBuffer();
+		}
+		Buffer(int size) : data_vec(size), layout() {
 			gl_genDynamicBuffer();
 		}
 		Buffer(unsigned size, T data[], GLenum usageHint) {
@@ -64,7 +67,7 @@ namespace Vertex
 			glDeleteBuffers(1, &handle);
 		}
 
-		virtual void bind() const { glBindBuffer(GL_ARRAY_BUFFER, handle); }
+		virtual void bind() const { glBindBuffer(BindingTarget, handle); }
 
 		template<typename T> void add_attribute(int index, bool = false) { static_assert(false); }
 		template<> inline void add_attribute<float>(int i, bool perInst) { layout.push<float>(1, i, perInst); }
@@ -73,6 +76,11 @@ namespace Vertex
 		template<> inline void add_attribute<vec4>(int i, bool perInst) { layout.push<float>(4, i, perInst); }
 		template<> inline void add_attribute<mat3>(int i, bool perInst) { layout.push<float>(4, i, perInst); } //TODO
 		template<> inline void add_attribute<mat4>(int i, bool perInst) { layout.push<float>(4, i, perInst); } //TODO
+
+		void applyData(GLenum usage_hint = GL_STATIC_DRAW) {
+			bind();
+			glBufferData(BindingTarget, data_vec.size() * sizeof(T), data_vec.data(), usage_hint);
+		}
 
 		void subData(unsigned size, float data[]) {
 			bind();
@@ -88,15 +96,15 @@ namespace Vertex
 			}
 		}
 
-		int getNumElements() {
-			return data_vec.size();
-		}
+		int getNumElements() { return data_vec.size(); }
 
 		void operator=(initializer_list<T> data) {
 			data_vec.insert(data_vec.end(), data);
 			gl_genBuffer(data_vec.size() * sizeof(T), data_vec.data(), GL_STATIC_DRAW); //not uber important but dynamic usage hint should be implemented
 		}//need alternate method of calling genBuffer for when algorithmically generating data
+		T& operator[](std::size_t i) { return data_vec[i]; }
 
+		
 	private:
 
 		void gl_genDynamicBuffer() {
@@ -118,13 +126,13 @@ namespace Vertex
 		}
 	};
 
-	struct Index : public Buffer<unsigned>
+	struct Index : public Buffer<unsigned, GL_ELEMENT_ARRAY_BUFFER>
 	{
 		using Buffer::operator=;
 		Index() : Index(0u, nullptr, GL_STATIC_DRAW) {}
+		Index(int size) : Buffer(size) {} // may not instantiate the right base-derived relationship
 		Index(unsigned size, GLuint data[], GLenum usageHint)
-			: Buffer<unsigned>(GL_ELEMENT_ARRAY_BUFFER, size, data, usageHint) {}
-		void bind() const override { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle); }
+			: Buffer(size, data, usageHint) {}
 	};
 
 	class Array

@@ -26,7 +26,6 @@ public:
 
 	//Particles* particles;
 	Scene::Object* cube;
-	Scene::Object* cube2;
 	Scene::Object* sphere;
 	Scene::Object* pointSprites;
 
@@ -46,13 +45,13 @@ public:
 	}
 	void update( float t )
 	{
-		cube->update(t);
+		sphere->update(t);
 	}
 	void render()
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		phongShader->use();
-		cube->render();
+		sphere->render();
 		SDL_GL_SwapWindow(window); // render back buffer to the screen
 	}
 	void clean()
@@ -78,7 +77,7 @@ private:
 		
 		phongShader = new Shader::Program("src/Phong.glsl");
 		set_phong_uniforms(*phongShader);
-		cube = new Cube(0.0f, 0.0f, -1.0f, *cam, *phongShader);
+		sphere = new Sphere(0.0f, 0.0f, -1.0f, *cam, *phongShader);
 	}
 
 	void set_phong_uniforms(Shader::Program &shader) {

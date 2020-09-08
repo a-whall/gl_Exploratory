@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 
 		dt = SDL_GetTicks() - frameBegin;
 		if (dt < ms_perFrame) SDL_Delay(ms_perFrame - dt);
-		else std::cout << "fdt > fps\n";
+		//else std::cout << "fdt > fps\n";
 	}
 	app->clean();
 

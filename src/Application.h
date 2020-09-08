@@ -18,7 +18,7 @@ class Application
 	SDL_Event ev;
 	const Uint8* keyStates;
 	Mix_Music* music;
-	bool running = false;
+	bool running = true;
 
 public:
 	
@@ -32,9 +32,12 @@ public:
 	Shader::Program* phongShader;
 	Shader::Program* pointSpriteShader;
 
-	void init(const char* title, int x, int y, int w, int h, int fullscreen) {
-		initializeFramework_createWindow(title, x, y, w, h, fullscreen);
-		initialize_camera(w, h);
+	void init(const char* title, int x, int y, int w, int h, int fullscreen)
+	{
+		init_framework();
+		init_window(title, x, y, w, h, fullscreen);
+		link_GLAPI();
+		init_camera(w, h);
 		prep_scene();
 	}
 
@@ -56,7 +59,7 @@ public:
 	}
 	void clean()
 	{
-		std::cout << "Exiting..." << std::endl;
+		std::cout << "\nExiting..." << std::endl;
 		if (music != nullptr) {
 			Mix_FreeMusic(music);
 			Mix_CloseAudio();
@@ -71,7 +74,8 @@ public:
 	
 private:
 
-	void prep_scene() {
+	void prep_scene()
+	{// encapsulation for any other preliminary scene 
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_MULTISAMPLE);
 		
@@ -103,25 +107,27 @@ private:
 		shader.set("ReflectFactor", 0.85f);
 	}
 
-	void initializeFramework_createWindow(const char* title, int x, int y, int w, int h, int fullscreen)
+	void init_framework()
 	{
 		startSDL();
+	}
+	void init_window(const char* title, int x, int y, int w, int h, int fullscreen)
+	{
 		window = SDL_CreateWindow(title, x, y, w, h, fullscreen);
 		context = SDL_GL_CreateContext(window);
 		keyStates = SDL_GetKeyboardState(nullptr);
-		linkGLAPI();
-		running = true;
-		std::cout << "SDL_OGL_Initialized\n";
 	}
-	void initialize_camera(int w, int h) {
+	void init_camera(int w, int h)
+	{
 		Camera::setWindowDimmensions(w, h);
 		cam = new Camera::Viewport(vec3(0.0f, 0.0f, 3.0f), vec3(0.0f, 0.0f, -1.0f), 1.25f);
 	}
-	void startSDL() {
+	void startSDL()
+	{// sdl_init_video implicitly inits events. opengl context is created by sdl.
 		if (SDL_Init(SDL_INIT_VIDEO) < 0) abort_MyGL_App("SDL initialization failed: ", SDL_GetError() );
-		if (IMG_Init(IMG_INIT_PNG) == 0) std::cout << "SDL_image initialization (PNG) failed: " << IMG_GetError() << "\n\n";
+		if (IMG_Init(IMG_INIT_PNG) == 0) std::cout << "SDL_image failed to initialize : " << IMG_GetError() << "\n\n";
 	}
-	void linkGLAPI()
+	void link_GLAPI()
 	{// use GL-extensions-wrangler library to dynamically link gl functionality
 		specifyGL();
 		glewExperimental = GL_TRUE; //"glewExperimental": global bool decides whether extensions from pre-release or experimental

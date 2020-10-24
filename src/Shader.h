@@ -259,10 +259,8 @@ namespace Shader
 		GLuint handle;
 
 		Program() : handle(glCreateProgram()), compiler(&handle), debugger(&handle) {}
-		Program(const char* srcFileName) : Program() { create(srcFileName); }
-		~Program() {
-			glDeleteProgram(handle);
-		}
+		Program(const char* srcFileName) : Program() { create(srcFileName); use(); }
+		~Program() { glDeleteProgram(handle); }
 
 		void use() const { glUseProgram(handle); }
 
@@ -291,7 +289,7 @@ namespace Shader
 		}
 
 		void showVertexAttributes() { debugger.printActiveVertexAttributes(); }
-		void showUniforms() { debugger.printActiveUniformVariables(); }
-		void showUniformBlocks() { debugger.printActiveUniformBlocks(); }
+		void showUniforms()         { debugger.printActiveUniformVariables(); }
+		void showUniformBlocks()    { debugger.printActiveUniformBlocks(); }
 	};
 }

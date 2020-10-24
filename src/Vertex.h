@@ -9,6 +9,8 @@ namespace Vertex
 	using glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 	using std::vector, std::initializer_list;
 
+
+
 	struct Attribute
 	{
 		unsigned count;
@@ -16,7 +18,7 @@ namespace Vertex
 		bool normalized;
 		unsigned offset;
 		int index;
-		bool instanced; // implicit bool to int used as attrib divisor. false = per vertex, true = per instance
+		bool instanced; // implicit bool to int used as attrib divisor. false -> per vertex, true -> per instance
 	};
 
 	struct DataLayout
@@ -41,9 +43,11 @@ namespace Vertex
 	class Buffer
 	{
 	protected:
+		int bindingIndex = -1;
 		DataLayout layout;
 		vector<T> data_vec;
 		bool generated = false;
+
 	public:
 
 		unsigned handle;
@@ -53,6 +57,9 @@ namespace Vertex
 		}
 		Buffer(int size) : data_vec(size), layout() {
 			gl_genDynamicBuffer();
+		}
+		Buffer(int size, int bindingIndex) : data_vec(size), layout() {
+			gl_genDynamicBuffer(bindingIndex);
 		}
 		Buffer(unsigned size, T data[], GLenum usageHint) {
 			gl_genBuffer<T>(size, data, usageHint);//basic buffer = array buffer
@@ -67,7 +74,13 @@ namespace Vertex
 			glDeleteBuffers(1, &handle);
 		}
 
-		virtual void bind() const { glBindBuffer(BindingTarget, handle); }
+		virtual void bind() const {
+			if (bindingIndex > -1) { 
+				glBindBufferBase(BindingTarget, bindingIndex, handle);
+				return;
+			}
+			glBindBuffer(BindingTarget, handle);
+		}
 
 		template<typename T> void add_attribute(int index, bool = false) { static_assert(false); }
 		template<> inline void add_attribute<float>(int i, bool perInst) { layout.push<float>(1, i, perInst); }
@@ -100,15 +113,17 @@ namespace Vertex
 
 		void operator=(initializer_list<T> data) {
 			data_vec.insert(data_vec.end(), data);
-			gl_genBuffer(data_vec.size() * sizeof(T), data_vec.data(), GL_STATIC_DRAW); //not uber important but dynamic usage hint should be implemented
-		}//need alternate method of calling genBuffer for when algorithmically generating data
+			gl_genBuffer(data_vec.size() * sizeof(T), data_vec.data(), GL_STATIC_DRAW); // variable usage hint should be implemented
+		}
 		T& operator[](std::size_t i) { return data_vec[i]; }
 
-		
 	private:
 
-		void gl_genDynamicBuffer() {
+		void gl_genDynamicBuffer(int bindingIndex = -1) {
 			glGenBuffers(1, &handle);
+			if (bindingIndex > -1) {
+				glBindBufferBase(BindingTarget, bindingIndex, handle);
+			}
 		}
 
 		template <typename T>
@@ -126,21 +141,27 @@ namespace Vertex
 		}
 	};
 
-	struct Index : public Buffer<unsigned, GL_ELEMENT_ARRAY_BUFFER>
+
+
+	/* specific buffer object for element buffers, uses unsigned int automatically */
+	struct Index :
+		public Buffer<unsigned, GL_ELEMENT_ARRAY_BUFFER>
 	{
 		using Buffer::operator=;
 		Index() : Index(0u, nullptr, GL_STATIC_DRAW) {}
-		Index(int size) : Buffer(size) {} // may not instantiate the right base-derived relationship
+		Index(int size) : Buffer(size) {}
 		Index(unsigned size, GLuint data[], GLenum usageHint)
 			: Buffer(size, data, usageHint) {}
 	};
+
+
 
 	class Array
 	{
 	protected:
 		GLuint handle;
 	public:
-		Array() { glGenVertexArrays(1, &handle); }
+		Array() { glGenVertexArrays(1, &handle); bind(); }
 		~Array() { glDeleteVertexArrays(1, &handle); }
 
 		void bind() const { 
@@ -150,7 +171,7 @@ namespace Vertex
 			Scene::currentlyBoundVaoHandle = handle;
 		}
 		
-		template<typename T> void bindBuffer(Buffer<T> &vbo) {
+		template<typename T, GLuint bt> void bindBuffer(Buffer<T, bt>& vbo) {
 			bind();
 			vbo.enable_attributes();
 		}

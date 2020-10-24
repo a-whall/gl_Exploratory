@@ -1,14 +1,20 @@
 #pragma once
 #include "vertex.h"
 
-class Sphere : public Scene::Object
+class Sphere :
+	public Scene::Object
 {
-	
-	const int nSlices = 20, nStacks = 20;
-	const int numUniqVerts = (nSlices + 1) * (nStacks + 1),
-		      numElements = (nSlices * 2 * (nStacks - 1)) * 3;
+	// sphere size and detail data
+	const int nSlices = 50,
+		      nStacks = 50;
+	const float radius = 1.0f;
 
-	float radius = 1.0f; // unit sphere
+	// buffer size data
+	const int numUniqVerts = (nSlices + 1) * (nStacks + 1),
+		      numElements = (nSlices * 2 * (nStacks - 1)) * 3,
+		      sizeofvbo = 3 * numUniqVerts + 3 * numUniqVerts + 2 * numUniqVerts;// 3f, 3f, 2f; pos, norm, texc
+
+	// vertex array & buffer objects
 	Vertex::Array vao;
 	Vertex::Buffer<float> vbo;
 	Vertex::Index ebo;
@@ -16,12 +22,8 @@ class Sphere : public Scene::Object
 public:
 
 	Sphere(float x, float y, float z, Camera::Viewport& cam, Shader::Program& shader)
-		: Scene::Object(x, y, z, cam, &shader),
-		vbo(3 * numUniqVerts + 3 * numUniqVerts + 2 * numUniqVerts),
-		ebo(numElements)
-	{
-		init_buffers();
-	}
+		: Scene::Object(x, y, z, cam, &shader), vbo(sizeofvbo), ebo(numElements) { init_buffers(); }
+
 	void init_buffers() override {
 		// Generate positions, normals, texture coordinates in a single data buffer
 		float dTheta = glm::two_pi<float>() / nSlices; // unit of theta; horizontal angle
@@ -34,7 +36,7 @@ public:
 			for (float j = 0.0f; j <= nStacks; j++) {  // for each vertical stack
 				phi = j * dPhi;                        // increment vertical angle
 
-				nx = sinf(phi) * cosf(theta);          // calculate normal direction vector
+				nx = sinf(phi) * cosf(theta);          // calculate normal vector
 				ny = sinf(phi) * sinf(theta);
 				nz = cosf(phi);
 
@@ -81,7 +83,7 @@ public:
 				}
 			}
 		}
-		// ugly: until I think of how gl-side buffers can be automatically filled when algorithmically generating vertex data. maybe a generate functor which can be supplied to a generic generate() which finishes by allocating the buffer before returning.
+
 		ebo.applyData();
 		vbo.applyData();
 
@@ -92,8 +94,8 @@ public:
 		set_uniforms();
 		set_matrices();
 	}
-	
 	void render() {
+		shader->use();
 		vao.bind();
 		glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, 0);
 	}
@@ -103,16 +105,16 @@ private:
 	void rotate() {
 		model = glm::rotate(model, radians(1.0f), vec3(0.0f, 1.0f, 0.0f));
 	}
-
 	void set_uniforms() {
 		shader->use();
+		vao.bind();
 		shader->set("ModelViewMatrix", mv);
 		shader->set("NormalMatrix", mat3(vec3(mv[0]), vec3(mv[1]), vec3(mv[2])));
 		shader->set("MVP", cam.get_ViewToProjection_Matrix() * mv);
 	}
-
 	void set_matrices() {
 		rotate();
 		mv = cam.get_WorldToView_Matrix() * model;
 	}
+
 };

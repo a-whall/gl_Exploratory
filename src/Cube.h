@@ -7,7 +7,7 @@ namespace CubeGeom {
 
 class Cube: public Scene::Object
 {
-    float side = 1.0f; // unit cube
+    float side = 1.0f;
 
     Vertex::Array vao;
     Vertex::Buffer<float> vbo;
@@ -75,6 +75,7 @@ public:
     }
 
     void render() override {  // TODO: fix bug where cube (and sphere) dont have vao to bind when rendering multiple objects
+        shader->use();
         vao.bind();
         glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, 0);
     }

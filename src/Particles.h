@@ -1,13 +1,14 @@
 #pragma once
-#include "Scene.h"
+#include "Vertex.h"
 #define MAX_NUM_PARTICLES_PER_D 1500
 
 using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 
-class Particles : public Scene::Object {
+class Particles
+    : public Scene::Object {
 
     glm::ivec3 nParticles;
-    unsigned totalParticles;
+    int totalParticles;
 
     Vertex::Array vao_particle;
     Vertex::Array vao_attractor;
@@ -15,8 +16,8 @@ class Particles : public Scene::Object {
     Shader::Program compute_shader;
     
     Vertex::Buffer<float, GL_ARRAY_BUFFER> vbo_attractor;
-    Vertex::BufferBase<float, GL_SHADER_STORAGE_BUFFER> vbo_pos;
-    Vertex::BufferBase<float, GL_SHADER_STORAGE_BUFFER> vbo_vel;
+    Vertex::Buffer<float, GL_SHADER_STORAGE_BUFFER> vbo_pos;
+    Vertex::Buffer<float, GL_SHADER_STORAGE_BUFFER> vbo_vel;
 
     float angle, rot_speed;
     float attractor_pos_data[8];
@@ -25,14 +26,15 @@ class Particles : public Scene::Object {
 
 public:
     Particles(int numX, int numY, int numZ, Camera::Viewport& cam)
-        : Scene::Object(0.0f, 0.0f, 0.0f, cam), nParticles(numX, numY, numZ),
+        : Scene::Object(0.0f, 0.0f, 0.0f, cam),
+        nParticles(numX, numY, numZ),
+        totalParticles(nParticles.x* nParticles.y* nParticles.z),
         particle_shader("src/Particle.glsl"), compute_shader("src/Gravity.glsl"),
-        vbo_pos(0, GL_DYNAMIC_DRAW), vbo_vel(1, GL_DYNAMIC_COPY),
+        vbo_pos(totalParticles * sizeof(float), 0u), vbo_vel(totalParticles * sizeof(float), 1u),
+        vbo_attractor(8 * sizeof(float)),
         vao_attractor(), vao_particle()
     {
-        std::cout << "Particles()\n\n";
         assert(numX < MAX_NUM_PARTICLES_PER_D); assert(numY < MAX_NUM_PARTICLES_PER_D); assert(numZ < MAX_NUM_PARTICLES_PER_D);
-        totalParticles = nParticles.x * nParticles.y * nParticles.z;
         init_buffers();
         rotationMatrix = mat4(1.0f);
     }
@@ -46,8 +48,8 @@ public:
         unsigned pBufSize = nBufElements * sizeof(float);
 
         
-        vbo_pos(nBufElements);
-        vbo_vel(nBufElements);
+        //vbo_pos = new Vertex::Buffer<float, GL_SHADER_STORAGE_BUFFER>(nBufElements);
+        //vbo_vel = new Vertex::Buffer<float, GL_SHADER_STORAGE_BUFFER>(nBufElements);
         //vector<float> initPos;
         //vector<float> initVel(totalParticles * 4, 0.0f);
 
@@ -57,6 +59,7 @@ public:
         // We want to center the particles at (0,0,0)
         mat4 transf = glm::translate(mat4(1.0f), vec3(-1, -1, -1));
 
+        int idx = 0;
         // Set initial positions for the particles
         for (int i = 0; i < nParticles.x; i++) {
             for (int j = 0; j < nParticles.y; j++) {
@@ -66,10 +69,10 @@ public:
                     p.z = dz * k;
                     p.w = 1.0f;
                     p = transf * p;
-                    vbo_pos + p.x; // should not be +, if anything overload << but maybe just make this a variadic function
-                    vbo_pos + p.y;
-                    vbo_pos + p.z;
-                    vbo_pos + p.w;
+                    vbo_pos[idx++] = p.x;
+                    vbo_pos[idx++] = p.y;
+                    vbo_pos[idx++] = p.z;
+                    vbo_pos[idx++] = p.w;
                 }
             }
         }
@@ -83,7 +86,6 @@ public:
 
         // Set up a buffer and a VAO for drawing the attractors
         set_attractor_positions();
-        vbo_attractor(8 * sizeof(float));
         vao_attractor.bindBuffer(vbo_attractor);
     }
 
@@ -122,7 +124,7 @@ public:
         // Draw the attractors
         glPointSize(5.0f);
         set_attractor_positions();
-        vbo_attractor.subData(GL_ARRAY_BUFFER, 8 * sizeof(float), attractor_pos_data);
+        vbo_attractor.subData(8 * sizeof(float), attractor_pos_data);
 
         particle_shader.set("Color", vec4(1.0f, 1.0f, 0.0f, 1.0f));
         vao_attractor.bind();

@@ -24,13 +24,17 @@ public:
 	
 	Camera::Viewport* cam;
 
-	//Particles* particles;
-	Scene::Object* cube;
+	Shader::Program* phong_shader;
 	Scene::Object* sphere;
-	Scene::Object* pointSprites;
+	
+	Shader::Program* ps2;
+	Scene::Object* cube;
+	
+	Shader::Program* graphlines_shader;
+	Scene::Object* grid;
 
-	Shader::Program* phongShader;
-	Shader::Program* pointSpriteShader;
+	Scene::Object* particles;
+
 
 	void init(const char* title, int x, int y, int w, int h, int fullscreen)
 	{
@@ -40,7 +44,6 @@ public:
 		init_camera(w, h);
 		prep_scene();
 	}
-
 	void handleEvents()
 	{
 		poll_events();
@@ -48,13 +51,16 @@ public:
 	}
 	void update( float t )
 	{
+		grid->update(t);
 		sphere->update(t);
+		cube->update(t);
 	}
 	void render()
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		phongShader->use();
+		grid->render();
 		sphere->render();
+		cube->render();
 		SDL_GL_SwapWindow(window); // render back buffer to the screen
 	}
 	void clean()
@@ -75,13 +81,23 @@ public:
 private:
 
 	void prep_scene()
-	{// encapsulation for any other preliminary scene 
+	{
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_MULTISAMPLE);
 		
-		phongShader = new Shader::Program("src/Phong.glsl");
-		set_phong_uniforms(*phongShader);
-		sphere = new Sphere(0.0f, 0.0f, -1.0f, *cam, *phongShader);
+		phong_shader = new Shader::Program("src/Phong.glsl");
+		set_phong_uniforms(*phong_shader);
+		sphere = new Sphere(0.0f, 0.0f, -1.0f, *cam, *phong_shader);
+
+		ps2 = new Shader::Program("src/Phong.glsl");
+		set_phong_uniforms(*ps2);
+		cube = new Cube(2.0f, 2.0f, 1.0f, *cam, *ps2);
+
+		graphlines_shader = new Shader::Program("src/GraphLines.glsl");
+		grid = new Grid(10.0f, *cam, *graphlines_shader);
+
+		//particles = new Particles();
+
 	}
 
 	void set_phong_uniforms(Shader::Program &shader) {

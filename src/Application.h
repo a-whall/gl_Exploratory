@@ -33,9 +33,6 @@ public:
 	Shader::Program* graphlines_shader;
 	Scene::Object* grid;
 
-	Scene::Object* particles;
-
-
 	void init(const char* title, int x, int y, int w, int h, int fullscreen)
 	{
 		init_framework();
@@ -61,7 +58,7 @@ public:
 		grid->render();
 		sphere->render();
 		cube->render();
-		SDL_GL_SwapWindow(window); // render back buffer to the screen
+		SDL_GL_SwapWindow(window);
 	}
 	void clean()
 	{
@@ -96,7 +93,6 @@ private:
 		graphlines_shader = new Shader::Program("src/GraphLines.glsl");
 		grid = new Grid(10.0f, *cam, *graphlines_shader);
 
-		//particles = new Particles();
 
 	}
 

@@ -8,6 +8,7 @@
 
 namespace Shader
 {
+	class Func;
 	using std::vector, std::string, std::stringstream, std::ifstream;
 	using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 
@@ -16,23 +17,28 @@ namespace Shader
 	class Compiler
 	{
 		static constexpr int NUM_SUPPORTED_SHADER_TYPES = 6;
+
 		GLuint* programHandle;
 		GLuint handles[NUM_SUPPORTED_SHADER_TYPES]{ 0, 0, 0, 0, 0, 0 };//individual shaders
+
 		string m_path;
-		string line;
+		Func* m_function;
 	
+		string line;
+
 	public:
 
 		Compiler(GLuint* glslProgram) : programHandle{ glslProgram } {}
 
-		void createShadersFrom(const char* filePath) {
+		void createShadersFrom(const char* filePath, Func* function = nullptr) {
 			m_path = filePath;
+			m_function = function;
 			stringstream ss[NUM_SUPPORTED_SHADER_TYPES];
 			parse_shader_source_code(ss);
 			gl_compile_shaders(ss);
 			gl_link_verifyLinkStatus();
 			gl_delete_precursor_shader_objects();
-			std::cout << "\nShaders for program " << *programHandle << " compiled and linked.\n";
+			std::cout << "\nShaders for program " << *programHandle << ": " << m_path << " compiled and linked.\n";
 		}
 
 	private:
@@ -43,6 +49,7 @@ namespace Shader
 			while (getline(stream, line)) {
 				if (line_contains("#shader")) t = find_shader_t();
 				else if (line_contains("#include")) temp_ifstream_lines_to(ss[t]);
+			//	else if (line_contains("#insert_function")) ss[t] << m_function->exprStr << "\n"; // no checks.
 				else if (line_contains("#end")) break;
 				else { assert(t != NONE); ss[t] << line << "\n"; }
 			}
@@ -120,6 +127,9 @@ namespace Shader
 		}
 		string substrFileName(unsigned s, unsigned l) {
 			return line.substr(s, l - s);
+		}
+		void insert_function() { 
+		    
 		}
 		Type find_shader_t() {
 			if (line_contains("vertex"))       return VERT;

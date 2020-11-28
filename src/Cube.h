@@ -74,7 +74,7 @@ public:
         set_matrices();
     }
 
-    void render() override {  // TODO: fix bug where cube (and sphere) dont have vao to bind when rendering multiple objects
+    void render() override {
         shader->use();
         vao.bind();
         glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, 0);

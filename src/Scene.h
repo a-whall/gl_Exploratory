@@ -15,7 +15,6 @@ namespace Scene
 { 
 	using glm::mat4, glm::vec3, std::vector, std::unique_ptr;
 
-
 	unsigned currentlyBoundVaoHandle = 0;
 
 
@@ -63,20 +62,19 @@ namespace Scene
 			T* o(new T(std::forward<TArgs>(mArgs)...));
 			unique_ptr<Object> uPtr{ o };
 			objects.emplace_back(std::move(uPtr));
-			o->init();
 			return *o;
 		}
 		void update(float t) {
 			for (auto& o : objects) o->update(t);
 		}
-		void draw() {
+		void render() {
 			for (auto& o : objects) o->render();
 		}
 		void refresh() {
-			// remove if the third parameter is a boolean, if active returns true, so does remove_if
 			objects.erase(
-				std::remove_if(std::begin(objects), std::end(objects), [](const unique_ptr<Object>& mEntity) {
-					return !mEntity->isActive;
+				std::remove_if(std::begin(objects), std::end(objects),
+					[](const unique_ptr<Object>& mEntity) {
+					    return !mEntity->isActive;
 					}),
 				std::end(objects));
 		}

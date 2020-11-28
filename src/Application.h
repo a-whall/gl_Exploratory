@@ -22,16 +22,12 @@ class Application
 
 public:
 	
+	Scene::Manager manager;
 	Camera::Viewport* cam;
-
 	Shader::Program* phong_shader;
-	Scene::Object* sphere;
-	
 	Shader::Program* ps2;
-	Scene::Object* cube;
-	
 	Shader::Program* graphlines_shader;
-	Scene::Object* grid;
+
 
 	void init(const char* title, int x, int y, int w, int h, int fullscreen)
 	{
@@ -48,16 +44,12 @@ public:
 	}
 	void update( float t )
 	{
-		grid->update(t);
-		sphere->update(t);
-		cube->update(t);
+		manager.update(t);
 	}
 	void render()
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		grid->render();
-		sphere->render();
-		cube->render();
+		manager.render();
 		SDL_GL_SwapWindow(window);
 	}
 	void clean()
@@ -84,16 +76,14 @@ private:
 		
 		phong_shader = new Shader::Program("src/Phong.glsl");
 		set_phong_uniforms(*phong_shader);
-		sphere = new Sphere(0.0f, 0.0f, -1.0f, *cam, *phong_shader);
+		manager.new_object<Sphere>(0.0f, 0.0f, -1.0f, *cam, *phong_shader);
 
 		ps2 = new Shader::Program("src/Phong.glsl");
 		set_phong_uniforms(*ps2);
-		cube = new Cube(2.0f, 2.0f, 1.0f, *cam, *ps2);
-
+		manager.new_object<Cube>(2.0f, 2.0f, 1.0f, *cam, *ps2);
+		
 		graphlines_shader = new Shader::Program("src/GraphLines.glsl");
-		grid = new Grid(10.0f, *cam, *graphlines_shader);
-
-
+		manager.new_object<Grid>(10.0f, *cam, *graphlines_shader);
 	}
 
 	void set_phong_uniforms(Shader::Program &shader) {
@@ -108,11 +98,7 @@ private:
 		shader.set("light.spec", 1.0f, 1.0f, 1.0f);
 		shader.set("mater.sheen", 100.0f);
 	}
-	/*void set_skybox_uniforms(Program &shader) {
-		mat4 mv = view * skybox->getModel();
-		shader.set("ModelMatrix", skybox->getModel());
-		shader.set("MVP", cam->get_ViewToProjection_Matrix() * mv);
-	}*/
+
 	void set_cubemap_uniforms(Shader::Program &shader) {
 		shader.set("WorldCameraPosition", cam->get_position());
 		shader.set("MaterialColor", vec4(0.5f, 0.5f, 0.5f, 1.0f));
@@ -135,26 +121,26 @@ private:
 		cam = new Camera::Viewport(vec3(0.0f, 0.0f, 3.0f), vec3(0.0f, 0.0f, -1.0f), 1.25f);
 	}
 	void startSDL()
-	{// sdl_init_video implicitly inits events. opengl context is created by sdl.
+	{
 		if (SDL_Init(SDL_INIT_VIDEO) < 0) abort_MyGL_App("SDL initialization failed: ", SDL_GetError() );
 		if (IMG_Init(IMG_INIT_PNG) == 0) std::cout << "SDL_image failed to initialize : " << IMG_GetError() << "\n\n";
 	}
 	void link_GLAPI()
-	{// use GL-extensions-wrangler library to dynamically link gl functionality
+	{
 		specifyGL();
-		glewExperimental = GL_TRUE; //"glewExperimental": global bool decides whether extensions from pre-release or experimental
-		glewInit();                 //        drivers are exposed (as long as the functions they contain have valid entry points)
+		glewExperimental = GL_TRUE;
+		glewInit();
 		submitDebugCallbackFunction();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	}
 	void specifyGL()
-	{ // specify the version of openGL associated with current GPU driver, as well as other context attributes
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);//a core profile allows for forward-compatibility
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);//request debug functionality in this opengl context
+	{
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4); // MultiSample-Anti-Aliasing for less pixelated edges
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 	}
 	void testGLEW() {
 		GLuint vertexBuffer; glGenBuffers(1, &vertexBuffer);
@@ -164,7 +150,7 @@ private:
 		}
 	}
 	void showExtensions()
-	{ // list opengl extensions based on current GPU driver version
+	{
 		GLint nExtensions; glGetIntegerv(GL_NUM_EXTENSIONS, &nExtensions);
 		for (int i = 0; i < nExtensions; i++)
 			std::cout << glGetStringi(GL_EXTENSIONS, i) << "\n";
@@ -172,17 +158,13 @@ private:
 	void setMusic(const char* MP3_file)
 	{
 		if (!Mix_Init(MIX_INIT_MP3)) std::cout << Mix_GetError() << "\n";
-
 		if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) std::cout << Mix_GetError() << "\n";
-
 		music = Mix_LoadMUS(MP3_file);
-
 		if (music != nullptr) Mix_PlayMusic(music, -1);
-
 		else std::cout << Mix_GetError() << "\n";
 	}
 	void poll_events()
-	{// pop SDL event queue, store event in member ev
+	{
 		SDL_PollEvent(&ev);
 		if (ev.type == SDL_MOUSEMOTION) cam->mouse_motion(ev.motion.x, ev.motion.y);
 		if (ev.type == SDL_MOUSEWHEEL)  cam->mouse_scroll(ev.wheel.y);

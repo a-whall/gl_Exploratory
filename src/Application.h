@@ -8,9 +8,6 @@
 #include "SceneObjects.h"
 #include "Debug.h"
 
-using glm::vec3, glm::vec4, glm::mat4;
-using glm::radians;
-
 class Application
 {
 	SDL_Window* window;
@@ -22,11 +19,12 @@ class Application
 
 public:
 	
-	Scene::Manager manager;
+	Scene::Manager m;
 	Camera::Viewport* cam;
 	Shader::Program* phong_shader;
 	Shader::Program* ps2;
 	Shader::Program* graphlines_shader;
+	Shader::Program* function_shader;
 
 
 	void init(const char* title, int x, int y, int w, int h, int fullscreen)
@@ -44,17 +42,16 @@ public:
 	}
 	void update( float t )
 	{
-		manager.update(t);
+		m.update(t);
 	}
 	void render()
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		manager.render();
+		m.render();
 		SDL_GL_SwapWindow(window);
 	}
 	void clean()
 	{
-		std::cout << "\nExiting..." << std::endl;
 		if (music != nullptr) {
 			Mix_FreeMusic(music);
 			Mix_CloseAudio();
@@ -65,7 +62,6 @@ public:
 		SDL_Quit();
 	}
 	bool isRunning() { return running; }
-	static unsigned getTicks() { return static_cast<unsigned>(SDL_GetTicks() / 100); } // 1 MyGL::tick = 1/10 second
 	
 private:
 
@@ -73,17 +69,22 @@ private:
 	{
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_MULTISAMPLE);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
-		phong_shader = new Shader::Program("src/Phong.glsl");
-		set_phong_uniforms(*phong_shader);
-		manager.new_object<Sphere>(0.0f, 0.0f, -1.0f, *cam, *phong_shader);
+		//phong_shader = new Shader::Program("src/Phong.glsl");
+		//set_phong_uniforms(*phong_shader);
+		//m.new_object<Sphere>(10.0f, 10.0f, 0.0f, *cam, *phong_shader);
 
-		ps2 = new Shader::Program("src/Phong.glsl");
-		set_phong_uniforms(*ps2);
-		manager.new_object<Cube>(2.0f, 2.0f, 1.0f, *cam, *ps2);
+		//ps2 = new Shader::Program("src/Phong.glsl");
+		//set_phong_uniforms(*ps2);
+		//m.new_object<Cube>(2.0f, 2.0f, 1.0f, *cam, *ps2);
 		
 		graphlines_shader = new Shader::Program("src/GraphLines.glsl");
-		manager.new_object<Grid>(10.0f, *cam, *graphlines_shader);
+		m.new_object<Plane>(30.0f, *cam, *graphlines_shader);
+
+		function_shader = new Shader::Program("src/Function.glsl");
+		m.new_object<Function>(30.0f, *cam, *function_shader);
 	}
 
 	void set_phong_uniforms(Shader::Program &shader) {
@@ -99,32 +100,30 @@ private:
 		shader.set("mater.sheen", 100.0f);
 	}
 
-	void set_cubemap_uniforms(Shader::Program &shader) {
-		shader.set("WorldCameraPosition", cam->get_position());
-		shader.set("MaterialColor", vec4(0.5f, 0.5f, 0.5f, 1.0f));
-		shader.set("ReflectFactor", 0.85f);
-	}
-
 	void init_framework()
 	{
 		startSDL();
 	}
+
 	void init_window(const char* title, int x, int y, int w, int h, int fullscreen)
 	{
 		window = SDL_CreateWindow(title, x, y, w, h, fullscreen);
 		context = SDL_GL_CreateContext(window);
 		keyStates = SDL_GetKeyboardState(nullptr);
 	}
+
 	void init_camera(int w, int h)
 	{
 		Camera::setWindowDimmensions(w, h);
 		cam = new Camera::Viewport(vec3(0.0f, 0.0f, 3.0f), vec3(0.0f, 0.0f, -1.0f), 1.25f);
 	}
+
 	void startSDL()
 	{
-		if (SDL_Init(SDL_INIT_VIDEO) < 0) abort_MyGL_App("SDL initialization failed: ", SDL_GetError() );
-		if (IMG_Init(IMG_INIT_PNG) == 0) std::cout << "SDL_image failed to initialize : " << IMG_GetError() << "\n\n";
+		if (SDL_Init(SDL_INIT_VIDEO) < 0) abort_MyGL_App("SDL initialization error: ", SDL_GetError() );
+		if (IMG_Init(IMG_INIT_PNG) == 0) std::cout << IMG_GetError() << "\n\n";
 	}
+
 	void link_GLAPI()
 	{
 		specifyGL();
@@ -133,6 +132,7 @@ private:
 		submitDebugCallbackFunction();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	}
+
 	void specifyGL()
 	{
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -142,6 +142,7 @@ private:
 		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 	}
+
 	void testGLEW() {
 		GLuint vertexBuffer; glGenBuffers(1, &vertexBuffer);
 		if (vertexBuffer == 1) {
@@ -149,12 +150,14 @@ private:
 			glDeleteBuffers(1, &vertexBuffer);
 		}
 	}
+
 	void showExtensions()
 	{
 		GLint nExtensions; glGetIntegerv(GL_NUM_EXTENSIONS, &nExtensions);
 		for (int i = 0; i < nExtensions; i++)
 			std::cout << glGetStringi(GL_EXTENSIONS, i) << "\n";
 	}
+
 	void setMusic(const char* MP3_file)
 	{
 		if (!Mix_Init(MIX_INIT_MP3)) std::cout << Mix_GetError() << "\n";
@@ -163,6 +166,7 @@ private:
 		if (music != nullptr) Mix_PlayMusic(music, -1);
 		else std::cout << Mix_GetError() << "\n";
 	}
+
 	void poll_events()
 	{
 		SDL_PollEvent(&ev);
@@ -172,6 +176,7 @@ private:
 		if (ev.type == SDL_QUIT) running = false;
 		if (ev.type == SDL_KEYUP && ev.key.keysym.sym == SDLK_ESCAPE) running = false;
 	}
+
 	void get_keystates()
 	{
 		SDL_PumpEvents();

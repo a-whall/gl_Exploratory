@@ -2,13 +2,14 @@
 #include <glm.hpp>
 #include <gtc/type_ptr.hpp>
 
-constexpr glm::vec3 world_up_vector = glm::vec3(0.0f, 1.0f, 0.0f);
+
 
 namespace Camera
 {
 	using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 	using glm::lookAt, glm::perspective, glm::cross, glm::normalize, glm::radians;
 
+	constexpr glm::vec3 world_up_vector = glm::vec3(0.0f, 1.0f, 0.0f);
 	const float SPEED = 2.5f;
 	const float SENSITIVITY = 0.1f;
 
@@ -52,7 +53,7 @@ namespace Camera
 			: position{ pos },
 			FORWARD{ viewDir },
 			worldToView{ lookAt(pos, glm::normalize(pos - viewDir), world_up_vector) },
-			viewToProjection{ perspective(glm::radians(70.0f), aspect, 0.1f, 100.0f) },
+			viewToProjection{ perspective(glm::radians(70.0f), aspect, 0.1f, 200.0f) },
 			RIGHT{ -glm::normalize(cross(world_up_vector, FORWARD)) },
 			UP{ glm::normalize(cross(FORWARD, RIGHT)) } {}
 		

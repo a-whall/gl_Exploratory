@@ -14,7 +14,7 @@ public:
 
 };
 
-class Grid : public Scene::Object {
+class Plane : public Scene::Object {
 
 	float nUnits, nGridLines;
 	unsigned nElements;
@@ -25,10 +25,10 @@ class Grid : public Scene::Object {
 
 public:
 
-	Grid(float numUnits, Camera::Viewport& cam, Shader::Program& shader)
+	Plane(float numUnits, Camera::Viewport& cam, Shader::Program& shader)
 		: Scene::Object(0, 0, 0, cam, &shader),
 		nUnits(numUnits), nGridLines(numUnits + 1),
-		vao(), vbo(3 * 4 * nGridLines), ebo(4 * nGridLines)
+		vao(), vbo(3 * 4 * nUnits), ebo(4 * nGridLines)
 	{
 		init_buffers();
 	}
@@ -79,7 +79,7 @@ private:
 	}
 
 	void gen_buffers_for_grid() {
-		float dx = 1.0f;
+		float dx = 1.0f; /// this will break nGridLines if changed. need to adjust nGridlines based on this value
 		float start = -(nUnits / 2);
 		int idx = 0;
 		for (float i = 0; i < nGridLines; i++) {
@@ -88,12 +88,12 @@ private:
 			// positions incr in the x direction, with zs constant
 			// from
 			vbo[idx++] = pos_dx;// x
-			vbo[idx++] = 0.5f*(pos_dx + start);     /// all these y components should be 0 for flat grid, testing for plane
+			vbo[idx++] = 0;//0.5f*(pos_dx + start); /// all these y components should be 0 for flat grid, testing for plane with slope .5x + .5y
 			vbo[idx++] = start; // z
 			//std::cout << "( " << pos_dx << ", 0, " << start << "), ";
 			// to
 			vbo[idx++] = pos_dx;// x
-			vbo[idx++] = 0.5f * (pos_dx - start);     // y
+			vbo[idx++] = 0;//0.5f * (pos_dx - start);     // y
 			vbo[idx++] = -start;// z
 			//std::cout << "(" << pos_dx << ", 0, " << -start << ")\n";
 		}
@@ -102,12 +102,12 @@ private:
 			float pos_dx = start + i * dx;
 
 			vbo[idx++] = start; // x
-			vbo[idx++] = 0.5f * (start + pos_dx);     // y 
+			vbo[idx++] = 0;//0.5f * (start + pos_dx);     // y 
 			vbo[idx++] = pos_dx;// z
 			//std::cout << "(" << start << ", 0, " << pos_dx << "), ";
 			// to
 			vbo[idx++] = -start;// x
-			vbo[idx++] = 0.5f * (pos_dx - start);     // y
+			vbo[idx++] = 0; //0.5f * (pos_dx - start);     // y
 			vbo[idx++] = pos_dx;// z
 			//std::cout << "(" << -start << ", 0, " << pos_dx << ")\n";
 		}
@@ -123,14 +123,9 @@ private:
 		ebo[idx++] = 1;
 		ebo[idx++] = 2 * nGridLines - 1;
 
-		// N E C E S S A R Y  FOR DYNAMIC DATA
+		// N E C E S S A R Y  FOR GENERATED DATA
 		ebo.applyData();
 		vbo.applyData();
 
 	}
-};
-
-class Plane : public Grid {
-
-
 };

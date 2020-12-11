@@ -70,8 +70,8 @@ public:
     }
 
     void update(float t) override {
-        set_uniforms();
         set_matrices();
+        set_uniforms();
     }
 
     void render() override {

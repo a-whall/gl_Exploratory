@@ -1,5 +1,4 @@
 #pragma once
-#include "vertex.h"
 
 class Sphere :
 	public Scene::Object
@@ -48,8 +47,8 @@ public:
 				vbo[idx + 4] = ny;
 				vbo[idx + 5] = nz;
 
-				vbo[idx + 6] = tcx;                   // generated tex coords
-				vbo[idx + 7] = tcy = j / nStacks;     // calculate tex coord y
+				vbo[idx + 6] = tcx;                    // generated tex coords
+				vbo[idx + 7] = tcy = j / nStacks;      // calculate tex coord y
 
 				idx += 8;                             // next vertex
 			}

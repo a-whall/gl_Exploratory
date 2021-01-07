@@ -1,15 +1,22 @@
 #pragma once
+#define PY_SSIZE_T_CLEAN
+#include <python.h>
+#include <iostream>
+#include <string>
 #include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
+#include "PyIn.h"
 #include "Camera.h"
 #include "Shader.h"
+#include "Vertex.h"
 #include "SceneObjects.h"
 #include "Debug.h"
 
 class Application
 {
+	
 	SDL_Window* window;
 	SDL_GLContext context;
 	SDL_Event ev;
@@ -29,7 +36,7 @@ public:
 
 	void init(const char* title, int x, int y, int w, int h, int fullscreen)
 	{
-		init_framework();
+		startSDL();
 		init_window(title, x, y, w, h, fullscreen);
 		link_GLAPI();
 		init_camera(w, h);
@@ -52,6 +59,7 @@ public:
 	}
 	void clean()
 	{
+		cpython::finalize();
 		if (music != nullptr) {
 			Mix_FreeMusic(music);
 			Mix_CloseAudio();
@@ -67,6 +75,7 @@ private:
 
 	void prep_scene()
 	{
+		cpython::initialize(); // needed when using a shader object that utilzes embedded python interpretter
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_BLEND);
@@ -98,11 +107,6 @@ private:
 		shader.set("mater.specRefl", 0.8f, 0.8f, 0.8f);
 		shader.set("light.spec", 1.0f, 1.0f, 1.0f);
 		shader.set("mater.sheen", 100.0f);
-	}
-
-	void init_framework()
-	{
-		startSDL();
 	}
 
 	void init_window(const char* title, int x, int y, int w, int h, int fullscreen)

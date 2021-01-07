@@ -8,11 +8,12 @@ Application* app = new Application();
 
 int main(int argc, char* argv[])
 {
+
 	constexpr int ms_perFrame = static_cast<int>((1000 / fps) + 0.5f);
 	Uint32 frameBegin;
 	int dt;
 	
-	app->init("OpenGL", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _WIDTH, _HEIGHT, SDL_WINDOW_OPENGL);
+	app->init(argv[0], SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _WIDTH, _HEIGHT, SDL_WINDOW_OPENGL);
 
 	while( app->isRunning() )
 	{

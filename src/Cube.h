@@ -1,7 +1,6 @@
 #pragma once
-#include "vertex.h"
 
-namespace CubeGeom {
+namespace Cube_Geom {
     // instanced data
 }
 

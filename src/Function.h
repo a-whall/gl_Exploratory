@@ -1,5 +1,4 @@
 #pragma once
-#include "Vertex.h"
 
 class Function : public Scene::Object {
 
@@ -10,6 +9,8 @@ class Function : public Scene::Object {
 	Vertex::Buffer<float> vbo;
 	Vertex::Index ebo;
 
+	PyObject* mFunc; // callable
+
 public:
 
 	Function(float numUnits, Camera::Viewport& cam, Shader::Program& shader)
@@ -17,6 +18,11 @@ public:
 		nUnits(numUnits), nEdges(nUnits + 1), nTriangles(nUnits* nUnits * 2),
 		vao(), vbo(3 * (nUnits + 1) * (nUnits + 1)), ebo(3 * nTriangles)
 	{
+		std::string f;
+		std::cout << "Enter a function of two variables: ";
+		getline(std::cin, f);
+		cpython::pyfile_buildFunction(f.c_str());
+		mFunc = cpython::pyfile_retrieveCallable("Func", "f");
 		init_buffers();
 	}
 
@@ -48,9 +54,16 @@ private:
 			x = start + i * 1.0f;
 			for (float j = 0; j < nEdges; j++) {
 				y = start + j * 1.0f;
+
+				PyObject* result = PyObject_CallFunction(mFunc, "f,f", x, y);
+				cpython::checkPyErr();
+				float z = (float)PyFloat_AsDouble(result);
+
 				vbo[idx++] = x;
-				vbo[idx++] = sqrtf(x + y);//0.15f * (x * x - y * y);//
+				vbo[idx++] = z;
 				vbo[idx++] = y;
+
+				Py_DecRef(result);
 			}
 		}
 		/// element buffer, generated triangle strips
@@ -68,7 +81,6 @@ private:
 				ebo[idx++] = elem;
 			}
 		}
-
 		ebo.applyData();
 		vbo.applyData();
 	}

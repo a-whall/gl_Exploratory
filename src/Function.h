@@ -1,4 +1,6 @@
-#pragma once
+namespace d {
+
+}
 
 class Function : public Scene::Object {
 

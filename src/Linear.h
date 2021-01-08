@@ -1,7 +1,3 @@
-#pragma once
-#include "Vertex.h"
-
-
 class Line : public Scene::Object {
 
 	glm::vec3 a, b;

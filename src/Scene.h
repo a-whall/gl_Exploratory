@@ -1,24 +1,10 @@
-#pragma once
-#include "GL/glew.h"
-#include <vector>
-#include <cmath>
-#include <glm.hpp>
-#include <gtc/matrix_transform.hpp>
-#include <gtc/type_ptr.hpp>
-#include <gtc/constants.hpp>
-#include <gtx/string_cast.hpp>
-
 using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
-using glm::lookAt, glm::perspective, glm::radians;
 
 namespace Scene
 { 
 	using glm::mat4, glm::vec3, std::vector, std::unique_ptr;
 
 	unsigned currentlyBoundVaoHandle = 0;
-
-
-
 
 	class Object
 	{
@@ -48,13 +34,10 @@ namespace Scene
 		virtual void setModel(mat4 m) final { model = m; };
 	};
 
-
-
-
 	class Manager
 	{
 		vector<unique_ptr<Object>> objects;
-
+		
 	public:
 
 		template <typename T, typename... TArgs>
@@ -78,6 +61,5 @@ namespace Scene
 					}),
 				std::end(objects));
 		}
-	
 	};
 }

@@ -1,22 +1,16 @@
 #pragma once
-#define PY_SSIZE_T_CLEAN
-#include <python.h>
-#include <iostream>
-#include <string>
-#include <GL/glew.h>
-#include <SDL.h>
-#include <SDL_image.h>
-#include <SDL_mixer.h>
+#include "ExtLibs.h"
+#include "Debug.h"
 #include "PyIn.h"
 #include "Camera.h"
+#include "Texture.h"
 #include "Shader.h"
+#include "Scene.h"
 #include "Vertex.h"
 #include "SceneObjects.h"
-#include "Debug.h"
 
 class Application
 {
-	
 	SDL_Window* window;
 	SDL_GLContext context;
 	SDL_Event ev;
@@ -26,7 +20,7 @@ class Application
 
 public:
 	
-	Scene::Manager m;
+	Scene::Manager scene_manager;
 	Camera::Viewport* cam;
 	Shader::Program* phong_shader;
 	Shader::Program* ps2;
@@ -46,15 +40,16 @@ public:
 	{
 		poll_events();
 		get_keystates();
+		//scene_manager.handle_input();
 	}
 	void update( float t )
 	{
-		m.update(t);
+		scene_manager.update(t);
 	}
 	void render()
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		m.render();
+		scene_manager.render();
 		SDL_GL_SwapWindow(window);
 	}
 	void clean()
@@ -81,19 +76,19 @@ private:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
-		//phong_shader = new Shader::Program("src/Phong.glsl");
-		//set_phong_uniforms(*phong_shader);
-		//m.new_object<Sphere>(10.0f, 10.0f, 0.0f, *cam, *phong_shader);
+		phong_shader = new Shader::Program("src/Phong.glsl");
+		set_phong_uniforms(*phong_shader);
+		scene_manager.new_object<Sphere>(10.0f, 10.0f, 0.0f, *cam, *phong_shader);
 
 		//ps2 = new Shader::Program("src/Phong.glsl");
 		//set_phong_uniforms(*ps2);
-		//m.new_object<Cube>(2.0f, 2.0f, 1.0f, *cam, *ps2);
+		//scene_manager.new_object<Cube>(2.0f, 2.0f, 1.0f, *cam, *ps2);
 		
 		graphlines_shader = new Shader::Program("src/GraphLines.glsl");
-		m.new_object<Plane>(30.0f, *cam, *graphlines_shader);
+		scene_manager.new_object<Plane>(30.0f, *cam, *graphlines_shader);
 
 		function_shader = new Shader::Program("src/Function.glsl");
-		m.new_object<Function>(30.0f, *cam, *function_shader);
+		scene_manager.new_object<Function>(30.0f, *cam, *function_shader);
 	}
 
 	void set_phong_uniforms(Shader::Program &shader) {
@@ -124,7 +119,7 @@ private:
 
 	void startSDL()
 	{
-		if (SDL_Init(SDL_INIT_VIDEO) < 0) abort_MyGL_App("SDL initialization error: ", SDL_GetError() );
+		if (SDL_Init(SDL_INIT_VIDEO) < 0) Debug::abort_MyGL_App("SDL initialization error: ", SDL_GetError() );
 		if (IMG_Init(IMG_INIT_PNG) == 0) std::cout << IMG_GetError() << "\n\n";
 	}
 
@@ -133,7 +128,7 @@ private:
 		specifyGL();
 		glewExperimental = GL_TRUE;
 		glewInit();
-		submitDebugCallbackFunction();
+		Debug::submitDebugCallbackFunction();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	}
 

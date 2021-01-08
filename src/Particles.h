@@ -4,24 +4,26 @@
 
 using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 
-class Particles
-    : public Scene::Object {
+class Particles : public Scene::Object {
 
     glm::ivec3 nParticles;
     int totalParticles;
 
     Vertex::Array vao_particle;
     Vertex::Array vao_attractor;
-    Shader::Program particle_shader;
-    Shader::Program compute_shader;
+
+    Shader::Program particle_shader; // drawing
+    Shader::Program compute_shader;  // compute velocity and position
     
     Vertex::Buffer<float, GL_ARRAY_BUFFER> vbo_attractor;
     Vertex::Buffer<float, GL_SHADER_STORAGE_BUFFER> vbo_pos;
     Vertex::Buffer<float, GL_SHADER_STORAGE_BUFFER> vbo_vel;
 
     float angle, rot_speed;
+
     float attractor_pos_data[8];
     vec3 att1_pos{-5.0f, 0.0f, 0.0f}, att2_pos{5.0f, 0.0f, 0.0f};
+    
     mat4 rotationMatrix;
 
 public:
@@ -29,10 +31,11 @@ public:
         : Scene::Object(0.0f, 0.0f, 0.0f, cam),
         nParticles(numX, numY, numZ),
         totalParticles(nParticles.x* nParticles.y* nParticles.z),
-        particle_shader("src/Particle.glsl"), compute_shader("src/Gravity.glsl"),
-        vbo_pos(totalParticles * sizeof(float), 0u), vbo_vel(totalParticles * sizeof(float), 1u),
-        vbo_attractor(8 * sizeof(float)),
-        vao_attractor(), vao_particle()
+        particle_shader("src/Particle.glsl"),
+        compute_shader("src/Gravity.glsl"),
+        vbo_pos(totalParticles * sizeof(float), 0u),
+        vbo_vel(totalParticles * sizeof(float), 1u),
+        vbo_attractor(8 * sizeof(float))
     {
         assert(numX < MAX_NUM_PARTICLES_PER_D); assert(numY < MAX_NUM_PARTICLES_PER_D); assert(numZ < MAX_NUM_PARTICLES_PER_D);
         init_buffers();
@@ -41,7 +44,7 @@ public:
 
     void init_buffers() override
     {
-        using std::vector;
+        //using std::vector;
 
         // buffers for position and velocity of each particle, both will be vec4 in size, which does leave an extra float per particle.
         unsigned nBufElements = totalParticles * 4;
@@ -109,7 +112,7 @@ public:
 
         // Draw scene
         particle_shader.use();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         model = mat4(1.0f);
         mat4 mv = cam.get_WorldToView_Matrix() * model;
         mat3 norm = mat3(vec3(mv[0]), vec3(mv[1]), vec3(mv[2]));

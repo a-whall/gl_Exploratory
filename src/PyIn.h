@@ -1,8 +1,6 @@
-#pragma once
-#include <fstream>
-
 namespace cpython {
     
+	using std::cerr, std::endl, std::ofstream;
 
 	static void checkPyErr() {
 		if (PyErr_Occurred())
@@ -17,21 +15,21 @@ namespace cpython {
 	
 	static void finalize() {
 		if (Py_FinalizeEx() < 0) {
-			std::cerr << "error closing python\n";
+			cerr << "error closing python\n";
 			exit(120);
 		}
 	}
 
 	static void pyfile_buildFunction(const char* f) { // build a file with a single function, defined as f
-		std::ofstream stream{ "../Debug/Func.py" };
-		stream << "def f(x,y) :\n\treturn " << f << std::endl;
+		ofstream stream{ "../Debug/Func.py" };
+		stream << "def f(x,y) :\n\treturn " << f << endl;
 		stream.close();
 	}
 
 	static void pyfile_appendFunction(const char* function_identifier, const char* function_expression) {
-		std::ofstream ofs;
-		ofs.open( "../Debug/Func.py", std::ofstream::out | std::ofstream::app);
-		ofs << "def " << function_identifier << "(x,y) :\n\treturn " << function_expression << std::endl;
+		ofstream ofs;
+		ofs.open( "../Debug/Func.py", ofstream::out | ofstream::app);
+		ofs << "\ndef " << function_identifier << "(x,y) :\n\treturn " << function_expression << std::endl;
 		ofs.close();
 	}
 

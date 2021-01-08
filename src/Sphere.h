@@ -1,5 +1,3 @@
-#pragma once
-
 class Sphere :
 	public Scene::Object
 {
@@ -102,7 +100,7 @@ public:
 private:
 
 	void rotate() {
-		model = glm::rotate(model, radians(1.0f), vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(1.0f), vec3(0.0f, 1.0f, 0.0f));
 	}
 	void set_uniforms() {
 		shader->use();

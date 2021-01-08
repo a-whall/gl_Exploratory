@@ -1,5 +1,3 @@
-#pragma once
-
 namespace Cube_Geom {
     // instanced data
 }
@@ -81,7 +79,7 @@ public:
 
 private:
     void rotate() {
-        model = glm::rotate(model, radians(0.3f), vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(0.3f), vec3(0.0f, 1.0f, 0.0f));
     }
 
     void set_uniforms() {

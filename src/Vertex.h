@@ -1,15 +1,8 @@
-#pragma once
-#include <GL/glew.h>
-#include <vector>
-#include <glm.hpp>
-#include "Scene.h"
-
 namespace Vertex
 {
 	using glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4;
-	using std::vector, std::initializer_list;
-
-
+	using std::vector, std::initializer_list, std::size_t;
+	using Scene::currentlyBoundVaoHandle;
 
 	struct Attribute
 	{
@@ -115,7 +108,7 @@ namespace Vertex
 			data_vec.insert(data_vec.end(), data);
 			gl_genBuffer(data_vec.size() * sizeof(T), data_vec.data(), GL_STATIC_DRAW); // variable usage hint should be implemented
 		}
-		T& operator[](std::size_t i) { return data_vec[i]; }
+		T& operator[](size_t i) { return data_vec[i]; }
 
 	private:
 
@@ -165,10 +158,10 @@ namespace Vertex
 		~Array() { glDeleteVertexArrays(1, &handle); }
 
 		void bind() const { 
-			if (handle == Scene::currentlyBoundVaoHandle)
+			if (handle == currentlyBoundVaoHandle)
 				return;
 			glBindVertexArray(handle);
-			Scene::currentlyBoundVaoHandle = handle;
+			currentlyBoundVaoHandle = handle;
 		}
 		
 		template<typename T, GLuint bt> void bindBuffer(Buffer<T, bt>& vbo) {

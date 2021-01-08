@@ -1,16 +1,8 @@
-#pragma once
-#include <cassert>
-#include <fstream>
-#include <sstream>
-#include <unordered_map>
-#include <glm.hpp>
-#include "debug.h"
-
 namespace Shader
 {
-	class Func;
-	using std::vector, std::string, std::stringstream, std::ifstream;
+	using std::vector, std::string, std::stringstream, std::ifstream, std::unordered_map;
 	using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
+	using Debug::abort_MyGL_App;
 
 	enum Type : int { NONE = -1, VERT = 0, TESC = 1, TESE = 2, GEOM = 3, FRAG = 4, COMP = 5 };
 
@@ -22,7 +14,6 @@ namespace Shader
 		GLuint handles[NUM_SUPPORTED_SHADER_TYPES]{ 0, 0, 0, 0, 0, 0 };//individual shaders
 
 		string m_path;
-		Func* m_function;
 	
 		string line;
 
@@ -30,9 +21,8 @@ namespace Shader
 
 		Compiler(GLuint* glslProgram) : programHandle{ glslProgram } {}
 
-		void createShadersFrom(const char* filePath, Func* function = nullptr) {
+		void createShadersFrom(const char* filePath) {
 			m_path = filePath;
-			m_function = function;
 			stringstream ss[NUM_SUPPORTED_SHADER_TYPES];
 			parse_shader_source_code(ss);
 			gl_compile_shaders(ss);
@@ -127,9 +117,6 @@ namespace Shader
 		}
 		string substrFileName(unsigned s, unsigned l) {
 			return line.substr(s, l - s);
-		}
-		void insert_function() { 
-		    
 		}
 		Type find_shader_t() {
 			if (line_contains("vertex"))       return VERT;
@@ -261,7 +248,7 @@ namespace Shader
 
 	class Program
 	{
-		std::unordered_map<const char*, int> uniformLocationCache;
+		unordered_map<const char*, int> uniformLocationCache;
 		Shader::Compiler compiler;
 		Shader::Debugger debugger;
 
@@ -269,7 +256,7 @@ namespace Shader
 		GLuint handle;
 
 		Program() : handle(glCreateProgram()), compiler(&handle), debugger(&handle) {}
-		Program(const char* srcFileName) : Program() { create(srcFileName); use(); }
+		Program(const char* srcFileName) : Shader::Program() { create(srcFileName); use(); }
 		~Program() { glDeleteProgram(handle); }
 
 		void use() const { glUseProgram(handle); }

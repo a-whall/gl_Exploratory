@@ -1,15 +1,10 @@
-#pragma once
-#include <glm.hpp>
-#include <gtc/type_ptr.hpp>
-
-
-
 namespace Camera
 {
-	using glm::vec3, glm::vec4, glm::mat3, glm::mat4;
-	using glm::lookAt, glm::perspective, glm::cross, glm::normalize, glm::radians;
+	using glm::vec3, glm::vec4, glm::mat3, glm::mat4,
+	      glm::lookAt, glm::perspective,                // gtc/type_ptr.hpp
+	      glm::cross, glm::normalize, glm::radians;
 
-	constexpr glm::vec3 world_up_vector = glm::vec3(0.0f, 1.0f, 0.0f);
+	constexpr vec3 world_up_vector = vec3(0.0f, 1.0f, 0.0f);
 	const float SPEED = 2.5f;
 	const float SENSITIVITY = 0.1f;
 

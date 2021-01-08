@@ -1,15 +1,14 @@
-#pragma once
-#include <iostream>
-#include <SDL_image.h>
-#include "GL/glew.h"
-
 namespace Texture
 {
+    using std::string;
+    using std::cout;
+    using Debug::abort_MyGL_App;
+
 	GLuint load(const char* filePath) {
 		GLuint textureHandle;
 		SDL_Surface* image = IMG_Load(filePath);
 		if (image == nullptr) {
-			std::cout << SDL_GetError();
+			cout << SDL_GetError();
 			return 0;
 		}
 		glGenTextures(1, &textureHandle);
@@ -23,13 +22,13 @@ namespace Texture
 	}
 
 
-    GLuint loadCubeMap(const std::string& baseName)
+    GLuint loadCubeMap(const string& baseName)
     {
         GLuint texID;
         const char* suffixes[] = { "posx", "negx", "posy", "negy", "posz", "negz" };
 
         // Load the first one to get width/height
-        std::string texName = baseName + "_" + suffixes[0] + ".png";
+        string texName = baseName + "_" + suffixes[0] + ".png";
         SDL_Surface* image = IMG_Load(texName.c_str());
         if (image == nullptr)
             abort_MyGL_App("SDL_image failed to load " + texName + ": ", IMG_GetError());

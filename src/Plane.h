@@ -1,5 +1,3 @@
-#pragma once
-
 class Plane : public Scene::Object {
 
 	float nUnits, nGridLines;

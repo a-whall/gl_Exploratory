@@ -4,8 +4,6 @@ namespace Scene
 { 
 	using glm::mat4, glm::vec3, std::vector, std::unique_ptr;
 
-	unsigned currentlyBoundVaoHandle = 0;
-
 	class Object
 	{
 	protected:

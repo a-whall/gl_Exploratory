@@ -26,13 +26,16 @@ public:
 	Shader::Program* ps2;
 	Shader::Program* graphlines_shader;
 	Shader::Program* function_shader;
+	Shader::Program* pointSprites_shader;
 
 
 	void init(const char* title, int x, int y, int w, int h, int fullscreen)
 	{
-		startSDL();
-		init_window(title, x, y, w, h, fullscreen);
-		link_GLAPI();
+		init_library_SDL();
+		make_window_SDL(title, x, y, w, h, fullscreen);
+		build_gl_context_SDL();
+		wrangle_modern_openglAPI_GLEW();
+		set_gl_debug_flags();
 		init_camera(w, h);
 		prep_scene();
 	}
@@ -70,25 +73,32 @@ private:
 
 	void prep_scene()
 	{
-		cpython::initialize(); // needed when using a shader object that utilzes embedded python interpretter
+		cpython::initialize(); // only needed when using a scene object that utilzes embedded python interpretter such as Function
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
+		/* Phong example  */
 		phong_shader = new Shader::Program("src/Phong.glsl");
 		set_phong_uniforms(*phong_shader);
-		scene_manager.new_object<Sphere>(10.0f, 10.0f, 0.0f, *cam, *phong_shader);
-
-		//ps2 = new Shader::Program("src/Phong.glsl");
-		//set_phong_uniforms(*ps2);
-		//scene_manager.new_object<Cube>(2.0f, 2.0f, 1.0f, *cam, *ps2);
+		scene_manager.new_object<Cube>(0.0f, 0.0f, -2.0f, *cam, *phong_shader);
 		
+		/* Plane for graphing */
 		graphlines_shader = new Shader::Program("src/GraphLines.glsl");
 		scene_manager.new_object<Plane>(30.0f, *cam, *graphlines_shader);
-
+		
+		/* Function for graphing */
 		function_shader = new Shader::Program("src/Function.glsl");
 		scene_manager.new_object<Function>(30.0f, *cam, *function_shader);
+		
+		/* Particles with gravity example*/
+		scene_manager.new_object<Particles>(5.0f, 5.0f, 5.0f, *cam);
+
+		/* Point sprites example */
+		pointSprites_shader = new Shader::Program("src/pointSprites.glsl");
+		scene_manager.new_object<PointSprites>("media/diamond_ore.png", *cam, *pointSprites_shader);
 	}
 
 	void set_phong_uniforms(Shader::Program &shader) {
@@ -103,43 +113,45 @@ private:
 		shader.set("light.spec", 1.0f, 1.0f, 1.0f);
 		shader.set("mater.sheen", 100.0f);
 	}
-
-	void init_window(const char* title, int x, int y, int w, int h, int fullscreen)
-	{
-		window = SDL_CreateWindow(title, x, y, w, h, fullscreen);
-		context = SDL_GL_CreateContext(window);
-		keyStates = SDL_GetKeyboardState(nullptr);
-	}
-
 	void init_camera(int w, int h)
 	{
 		Camera::setWindowDimmensions(w, h);
 		cam = new Camera::Viewport(vec3(0.0f, 0.0f, 3.0f), vec3(0.0f, 0.0f, -1.0f), 1.25f);
 	}
 
-	void startSDL()
+	void init_library_SDL()
 	{
 		if (SDL_Init(SDL_INIT_VIDEO) < 0) Debug::abort_MyGL_App("SDL initialization error: ", SDL_GetError() );
 		if (IMG_Init(IMG_INIT_PNG) == 0) std::cout << IMG_GetError() << "\n\n";
 	}
 
-	void link_GLAPI()
+	void make_window_SDL(const char* title, int x, int y, int w, int h, int fullscreen)
 	{
-		specifyGL();
-		glewExperimental = GL_TRUE;
-		glewInit();
-		Debug::submitDebugCallbackFunction();
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		window = SDL_CreateWindow(title, x, y, w, h, fullscreen);
+		keyStates = SDL_GetKeyboardState(nullptr);
 	}
 
-	void specifyGL()
+	void build_gl_context_SDL()
 	{
+		context = SDL_GL_CreateContext(window);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+	}
+
+	void wrangle_modern_openglAPI_GLEW()
+	{
+		glewExperimental = GL_TRUE;
+		GLenum glewERR = glewInit();
+		if (glewERR != GLEW_OK)
+			std::cout << "glew error : " << glewGetErrorString(glewERR) << std::endl;
+	}
+
+	void set_gl_debug_flags() {
+		Debug::submitDebugCallbackFunction();
 	}
 
 	void testGLEW() {
@@ -181,9 +193,9 @@ private:
 		SDL_PumpEvents();
 		if (keyStates[SDL_SCANCODE_A]) cam->move(-.1f, cam->RIGHT);
 		if (keyStates[SDL_SCANCODE_W]) cam->move(0.1f, cam->FORWARD);
-		if (keyStates[SDL_SCANCODE_LSHIFT]) cam->move(-.1f, cam->UP);
+		if (keyStates[SDL_SCANCODE_LSHIFT]) cam->move(-.1f, Camera::world_up_vector);
 		if (keyStates[SDL_SCANCODE_D]) cam->move(0.1f, cam->RIGHT);
 		if (keyStates[SDL_SCANCODE_S]) cam->move(-.1f, cam->FORWARD);
-		if (keyStates[SDL_SCANCODE_SPACE])  cam->move(0.1f, cam->UP);
+		if (keyStates[SDL_SCANCODE_SPACE])  cam->move(0.1f, Camera::world_up_vector);
 	}
 };

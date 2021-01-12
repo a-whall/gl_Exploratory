@@ -4,6 +4,6 @@
 #include "Linear.h"
 #include "Plane.h"
 #include "Function.h"
-//#include "Particles.h"
-//#include "PointSprites.h"
+#include "Particles.h"
+#include "PointSprites.h"
 //#include "Skybox.h"

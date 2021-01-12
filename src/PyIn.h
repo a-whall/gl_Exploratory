@@ -1,6 +1,15 @@
-namespace cpython {
-    
+namespace cpython
+{    
 	using std::cerr, std::endl, std::ofstream;
+
+
+
+	class Callable {
+
+
+	};
+
+
 
 	static void checkPyErr() {
 		if (PyErr_Occurred())

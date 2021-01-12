@@ -15,7 +15,9 @@
 
 // glew / glm
 #include <GL/glew.h>
+#include <glm.hpp>
 #include <gtc/type_ptr.hpp>
+#include <gtc/matrix_transform.hpp>
 
 // sdl framework
 #include <SDL.h>

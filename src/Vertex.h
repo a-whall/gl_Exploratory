@@ -2,7 +2,6 @@ namespace Vertex
 {
 	using glm::vec2, glm::vec3, glm::vec4, glm::mat3, glm::mat4;
 	using std::vector, std::initializer_list, std::size_t;
-	using Scene::currentlyBoundVaoHandle;
 
 	struct Attribute
 	{
@@ -18,25 +17,31 @@ namespace Vertex
 	{
 		vector<Attribute> attrib_vec;
 		unsigned nBytes = 0;
-		template <typename T> void push(unsigned, int, bool = false) { static_assert(false); }
-		template<> inline void push<float>(unsigned count, int attribIndex, bool isInstanced) {
+		
+		template <typename T>
+		void push(unsigned, int, bool = false) { static_assert(false); }
+
+		template<> inline
+		void push<float>(unsigned count, int attribIndex, bool isInstanced) {
 			attrib_vec.push_back({ count, GL_FLOAT, false, nBytes, attribIndex, isInstanced });//nBytes given as offset
-			nBytes += count * 4;// sizeof(float)                                              before getting updated
+			nBytes += count * 4;// sizeof(float)                                                 before getting updated
 		}
-		template<> inline void push<unsigned>(unsigned count, int attribIndex, bool isInstanced) {
+		template<> inline
+		void push<unsigned>(unsigned count, int attribIndex, bool isInstanced) {
 			attrib_vec.push_back({ count, GL_UNSIGNED_INT, false, nBytes, attribIndex, isInstanced });
 			nBytes += count * 4;// sizeof(unsigned)
 		}
-		template<> inline void push<unsigned char>(unsigned count, int attribIndex, bool isInstanced) {
+		template<> inline
+		void push<unsigned char>(unsigned count, int attribIndex, bool isInstanced) {
 			attrib_vec.push_back({ count, GL_UNSIGNED_BYTE, false, nBytes++, attribIndex, isInstanced });
 		}
 	};
 
-	template<typename T, GLenum BindingTarget = GL_ARRAY_BUFFER>
+	template<typename T>
 	class Buffer
 	{
 	protected:
-		int bindingIndex = -1;
+		GLenum binding_target = GL_ARRAY_BUFFER;
 		DataLayout layout;
 		vector<T> data_vec;
 		bool generated = false;
@@ -45,57 +50,44 @@ namespace Vertex
 
 		unsigned handle;
 
-		Buffer() : data_vec(0), layout() {
-			gl_genDynamicBuffer();
-		}
-		Buffer(int size) : data_vec(size), layout() {
-			gl_genDynamicBuffer();
-		}
-		Buffer(int size, int bindingIndex) : data_vec(size), layout() {
-			gl_genDynamicBuffer(bindingIndex);
-		}
-		Buffer(unsigned size, T data[], GLenum usageHint) {
-			gl_genBuffer<T>(size, data, usageHint);//basic buffer = array buffer
-		}
-		Buffer(GLenum bindingTarget, unsigned size, T data[], GLenum usageHint) {
-			gl_genBuffer<T>(size, data, usageHint);
-		}
-		Buffer(GLenum bindingTarget, unsigned size, float data[], GLenum usageHint, unsigned bindingIndex) {
-			gl_genBufferBase<T>(size, data, usageHint, bindingIndex);//for mapping buffers to a binding target index
-		}
-		~Buffer() {
-			glDeleteBuffers(1, &handle);
-		}
+		Buffer(int nElems = 0)        : data_vec(nElems), layout()          { gen_buffer(); }
+		Buffer(int nElems, T initVal) : data_vec(nElems, initVal), layout() { gen_buffer(); }
+		Buffer(initializer_list<T> data) : data_vec(0), layout()            { gen_buffer(); data_vec.insert(data_vec.end(), data); }
+		Buffer(unsigned size, T data[], GLenum glMemUseHint) : data_vec(0)
+		{ gen_buffer(); bind(); fill_data_vec(data); buffer_data(glMemUseHint); }
+		Buffer(GLenum bt, unsigned size, T data[], GLenum glMemUseHint)
+		{ gen_buffer(); bind(bt); data_vec.insert(data_vec.end(), &data[0], &data[sizeof(data) / sizeof(T)]); buffer_data(glMemUseHint); }
 
-		virtual void bind() const {
-			if (bindingIndex > -1) { 
-				glBindBufferBase(BindingTarget, bindingIndex, handle);
-				return;
-			}
-			glBindBuffer(BindingTarget, handle);
-		}
+		~Buffer() { glDeleteBuffers(1, &handle); }
+
+		virtual void bind() const { glBindBuffer(binding_target, handle); }
+		virtual void bind     (GLenum bindingTarget) { glBindBuffer(binding_target = bindingTarget, handle); }
+		virtual void bind_base(GLenum bt, int b_idx) { glBindBufferBase(binding_target = bt, b_idx, handle); }
 
 		template<typename T> void add_attribute(int index, bool = false) { static_assert(false); }
 		template<> inline void add_attribute<float>(int i, bool perInst) { layout.push<float>(1, i, perInst); }
-		template<> inline void add_attribute<vec2>(int i, bool perInst) { layout.push<float>(2, i, perInst); }
-		template<> inline void add_attribute<vec3>(int i, bool perInst) { layout.push<float>(3, i, perInst); }
-		template<> inline void add_attribute<vec4>(int i, bool perInst) { layout.push<float>(4, i, perInst); }
-		template<> inline void add_attribute<mat3>(int i, bool perInst) { layout.push<float>(4, i, perInst); } //TODO
-		template<> inline void add_attribute<mat4>(int i, bool perInst) { layout.push<float>(4, i, perInst); } //TODO
+		template<> inline void add_attribute<vec2>(int i, bool perInst)  { layout.push<float>(2, i, perInst); }
+		template<> inline void add_attribute<vec3>(int i, bool perInst)  { layout.push<float>(3, i, perInst); }
+		template<> inline void add_attribute<vec4>(int i, bool perInst)  { layout.push<float>(4, i, perInst); }
+		//template<> inline void add_attribute<mat3>(int i, bool perInst) { layout.push<float>(4, i, perInst); } //TODO
+		//template<> inline void add_attribute<mat4>(int i, bool perInst) { layout.push<float>(4, i, perInst); } //TODO
 
-		void applyData(GLenum usage_hint = GL_STATIC_DRAW) {
-			bind();
-			glBufferData(BindingTarget, data_vec.size() * sizeof(T), data_vec.data(), usage_hint);
+		void buffer_data(GLenum usage_hint = GL_STATIC_DRAW)
+		{
+			glBufferData(binding_target, data_vec.size() * sizeof(T), data_vec.data(), usage_hint);
 		}
-
-		void subData(unsigned size, float data[]) {
-			bind();
-			glBufferSubData(BindingTarget, 0, size, data);
+		void buffer_sub_data() {
+			glBufferSubData(binding_target, 0, data_vec.size() * sizeof(T), data_vec.data());
 		}
-
-		void enable_attributes() {
+		void buffer_sub_data(unsigned size, float data[])
+		{
+			data_vec.insert(data_vec.begin(), &data[0], &data[sizeof(data) / sizeof(T)]);
+			glBufferSubData(binding_target, 0, size, data);
+		}
+		void enable_vertex_attribute_pointers()
+		{
 			bind();
-			for (Attribute a : layout.attrib_vec) {
+			for (const Attribute& a : layout.attrib_vec) {
 				glEnableVertexAttribArray(a.index);
 				glVertexAttribPointer(a.index, a.count, a.type, a.normalized, layout.nBytes, (void*)a.offset);
 				glVertexAttribDivisor(a.index, a.instanced);
@@ -103,85 +95,68 @@ namespace Vertex
 		}
 
 		int getNumElements() { return data_vec.size(); }
-
-		void operator=(initializer_list<T> data) {
-			data_vec.insert(data_vec.end(), data);
-			gl_genBuffer(data_vec.size() * sizeof(T), data_vec.data(), GL_STATIC_DRAW); // variable usage hint should be implemented
-		}
-		T& operator[](size_t i) { return data_vec[i]; }
+		void operator=(initializer_list<T> data) { data_vec.insert(data_vec.end(), data); buffer_data(); }
+		T&   operator[](size_t i)                { return data_vec[i]; }
 
 	private:
 
-		void gl_genDynamicBuffer(int bindingIndex = -1) {
-			glGenBuffers(1, &handle);
-			if (bindingIndex > -1) {
-				glBindBufferBase(BindingTarget, bindingIndex, handle);
-			}
-		}
+		void gen_buffer() { glGenBuffers(1, &handle); }
 
-		template <typename T>
-		void gl_genBuffer(unsigned size, T data[], GLenum usageHint) {
-			glGenBuffers(1, &handle);
-			glBindBuffer(BindingTarget, handle);
-			glBufferData(BindingTarget, size, data, usageHint);
-		}
-		
-		template <typename T>
-		void gl_genBufferBase( unsigned size, T data[], GLenum usageHint, unsigned bindingIndex) {
-			glGenBuffers(1, &handle);
-			glBindBufferBase(BindingTarget, bindingIndex, handle);
-			glBufferData(BindingTarget, size, data, usageHint);
-		}
+		void fill_data_vec(const T data[]) { data_vec.insert(data_vec.end(), data, data + sizeof(*data) / sizeof(T)); }
 	};
 
 
-
-	/* specific buffer object for element buffers, uses unsigned int automatically */
-	struct Index :
-		public Buffer<unsigned, GL_ELEMENT_ARRAY_BUFFER>
+	struct Index : public Buffer<unsigned>
 	{
 		using Buffer::operator=;
-		Index() : Index(0u, nullptr, GL_STATIC_DRAW) {}
-		Index(int size) : Buffer(size) {}
-		Index(unsigned size, GLuint data[], GLenum usageHint)
-			: Buffer(size, data, usageHint) {}
+		Index(int size = 0) : Buffer(size) {}
+		Index(unsigned size, GLuint data[]) : Buffer(size, data, GL_STATIC_DRAW) {}
 	};
-
 
 
 	class Array
 	{
 	protected:
+		
 		GLuint handle;
+
 	public:
-		Array() { glGenVertexArrays(1, &handle); bind(); }
+
+		Array() { glGenVertexArrays(1, &handle); }
 		~Array() { glDeleteVertexArrays(1, &handle); }
 
-		void bind() const { 
-			if (handle == currentlyBoundVaoHandle)
-				return;
-			glBindVertexArray(handle);
-			currentlyBoundVaoHandle = handle;
-		}
+		void bind()   const { glBindVertexArray(handle); }
+		void unBind() const { glBindVertexArray(0); }
 		
-		template<typename T, GLuint bt> void bindBuffer(Buffer<T, bt>& vbo) {
+		template<typename T> void enable_attributes(Buffer<T>& vbo)
+		{
 			bind();
-			vbo.enable_attributes();
+			vbo.enable_vertex_attribute_pointers();
+			unBind();
 		}
-
-		template<typename T> void bindBuffers(Index& ebo, Buffer<T>& vbo, bool hasNorm, bool hasTC, bool hasTan) {
+		template<typename T> void bind_buffers(Index& ebo, Buffer<T>& vbo, bool hasNorm, bool hasTC, bool hasTan)
+		{
 			bind();
 			ebo.bind();
 			vbo.bind();
 			vbo.add_attribute<vec3>(0);
-			if (hasNorm)
-				vbo.add_attribute<vec3>(1);
-			if (hasTC)
-				vbo.add_attribute<vec2>(2);
-			if (hasTan)
-				vbo.add_attribute<vec3>(3);
-
-			vbo.enable_attributes();
+			if (hasNorm) vbo.add_attribute<vec3>(1);
+			if ( hasTC ) vbo.add_attribute<vec2>(2);
+			if (hasTan ) vbo.add_attribute<vec3>(3);
+			vbo.enable_vertex_attribute_pointers();
+			unBind();
 		}
+	};
+
+	template<typename T>
+	void bind_buffer(GLenum targetBufferBindingPoint, const Buffer<T>& bufferObject)
+	{
+		glBindBuffer(targetBufferBindingPoint, bufferObject.handle);
+	};
+
+	template<typename T>
+	void bind_buffer_base(GLenum targetBufferBindingPoint, int bindingIndex, const Buffer<T>& bufferObject)
+	{
+		glBindBufferBase(targetBufferBindingPoint, bindingIndex, bufferObject.handle);
 	};
 }

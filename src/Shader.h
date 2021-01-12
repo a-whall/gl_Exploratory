@@ -34,12 +34,11 @@ namespace Shader
 	private:
 
 		void parse_shader_source_code(stringstream ss[]) {
-			ifstream stream{ m_path };
+			ifstream ifs{ m_path };
 			Type t = NONE;
-			while (getline(stream, line)) {
+			while (getline(ifs, line)) {
 				if (line_contains("#shader")) t = find_shader_t();
 				else if (line_contains("#include")) temp_ifstream_lines_to(ss[t]);
-			//	else if (line_contains("#insert_function")) ss[t] << m_function->exprStr << "\n"; // no checks.
 				else if (line_contains("#end")) break;
 				else { assert(t != NONE); ss[t] << line << "\n"; }
 			}
@@ -58,11 +57,11 @@ namespace Shader
 			glDetachShader(*programHandle, shaderHandle);
 			glDeleteShader(shaderHandle);
 		}
-		void gl_compile_attach(Type myTypeEnum, GLuint* shaderHandle, const char* sourceCode) {
-			gl_createShader(*shaderHandle, glEnum(myTypeEnum));
+		void gl_compile_attach(Type shader_t, GLuint* shaderHandle, const char* sourceCode) {
+			gl_createShader(*shaderHandle, glEnum(shader_t));
 			glShaderSource(*shaderHandle, 1, &sourceCode, nullptr);
 			glCompileShader(*shaderHandle);
-			checkCompileStatus(*shaderHandle);
+			checkCompileStatus(*shaderHandle, get_shader_t(shader_t));
 			glAttachShader(*programHandle, *shaderHandle);
 		}
 		void gl_link_verifyLinkStatus() { // create an executable for all attached shaders
@@ -81,9 +80,9 @@ namespace Shader
 			if (!(shaderHandle = glCreateShader(shaderType)))
 				abort_MyGL_App("Error creating shader program object.\n");
 		}
-		void checkCompileStatus(GLuint shader) {
+		void checkCompileStatus(GLuint shader, string shader_t) {
 			if (getiv(shader, GL_COMPILE_STATUS) == GL_FALSE)
-				abort_MyGL_App("Shader compilation failed.\n", getShaderErrorLog(shader));
+				abort_MyGL_App("\nError - " + m_path + " :\n", shader_t + " Shader compilation failed.\n", getShaderErrorLog(shader));
 		}
 		string getShaderErrorLog(GLuint shaderHandle) {
 			int logLen = getiv(shaderHandle, GL_INFO_LOG_LENGTH);
@@ -127,6 +126,14 @@ namespace Shader
 			else if (line_contains("compute"))      return COMP;
 
 			else return NONE; // perhaps throw a fatal compiler error and abort
+		}
+		string get_shader_t(Type shader_t) {
+			if (shader_t == 0) return "Vertex";
+			else if (shader_t == 1) return "Tes Control";
+			else if (shader_t == 2) return "Tes Evaluate";
+			else if (shader_t == 3) return "Geometry";
+			else if (shader_t == 4) return "Fragment";
+			else if (shader_t == 5) return "Compute";
 		}
 		bool line_contains(string phrase) {
 			return (line.find(phrase) != string::npos);

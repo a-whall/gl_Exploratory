@@ -3,16 +3,16 @@
 
 layout( local_size_x = 1000 ) in;
 
-uniform float G1 = 1000.0;
+uniform float G1 = 100.0;
 uniform vec3 attractor1_pos;
 
-uniform float G2 = 1000.0;
+uniform float G2 = 100.0;
 uniform vec3 attractor2_pos;
 
 const uniform float ParticleMass = 0.1;
 uniform float ParticleInvMass = 1.0 / 0.2;
 uniform float dt = 0.0005;
-uniform float MaxDist = 15.0;
+uniform float MaxDist = 100.0;
 
 layout(std430, binding = 0) buffer Pos {
   vec4 p[];
@@ -38,7 +38,7 @@ void main()
     if( r1 > MaxDist && r2 > MaxDist) { // Reset positions of particles that get too far from the attractors
         p[i] = vec4(0,0,0,1);
     }
-    else { // Apply simple Euler integrator
+    else { // Apply Euler integrator
         vec3 a = force * ParticleInvMass;
         p[i] = vec4( particle_pos + v[i].xyz * dt + 0.5*a*dt*dt, 1.0);
         v[i] = vec4( v[i].xyz + a * dt, 0.0);

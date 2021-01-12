@@ -19,8 +19,6 @@ public:
 
 	void init_buffers() override {
 		gen_buffers_for_grid();
-		nVerts = ebo.getNumElements();
-		vao.bindBuffers(ebo, vbo, false, false, false);
 	}
 
 	void update(float t) override {
@@ -32,6 +30,7 @@ public:
 		shader->use();
 		vao.bind();
 		glDrawElements(GL_LINES, nVerts, GL_UNSIGNED_INT, 0);
+		vao.unBind();
 	}
 
 private:
@@ -63,53 +62,50 @@ private:
 	}
 
 	void gen_buffers_for_grid() {
-		float dx = 1.0f; /// this will break nGridLines if changed. need to adjust nGridlines based on this value
+		float dx = 1.0f; /// this value assumes the scale of the grid is 1:1
 		float start = -(nUnits / 2);
 		int idx = 0;
-		for (float i = 0; i < nGridLines; i++) {
-
+		for (float i = 0; i < nGridLines; i++)
+		{ // positions incr in the x direction, with z constant
 			float pos_dx = start + i * dx;
-			// positions incr in the x direction, with zs constant
 			// from
 			vbo[idx++] = pos_dx;// x
-			vbo[idx++] = 0;//0.5f*(pos_dx + start); /// all these y components should be 0 for flat grid, testing for plane with slope .5x + .5y
+			vbo[idx++] = 0;     // y
 			vbo[idx++] = start; // z
-			//std::cout << "( " << pos_dx << ", 0, " << start << "), ";
 			// to
 			vbo[idx++] = pos_dx;// x
-			vbo[idx++] = 0;//0.5f * (pos_dx - start);     // y
+			vbo[idx++] = 0;     // y
 			vbo[idx++] = -start;// z
-			//std::cout << "(" << pos_dx << ", 0, " << -start << ")\n";
 		}
-		for (float i = 1; i < nGridLines - 1; i++) {
-
+		for (float i = 1; i < nGridLines - 1; i++)
+		{ // positions incr in the z direction, with x constant
 			float pos_dx = start + i * dx;
-
+			//from
 			vbo[idx++] = start; // x
-			vbo[idx++] = 0;//0.5f * (start + pos_dx);     // y 
+			vbo[idx++] = 0;     // y 
 			vbo[idx++] = pos_dx;// z
-			//std::cout << "(" << start << ", 0, " << pos_dx << "), ";
 			// to
 			vbo[idx++] = -start;// x
-			vbo[idx++] = 0; //0.5f * (pos_dx - start);     // y
+			vbo[idx++] = 0;     // y
 			vbo[idx++] = pos_dx;// z
-			//std::cout << "(" << -start << ", 0, " << pos_dx << ")\n";
 		}
+
 		idx = 0;
-		for (unsigned i = 0; i < 2 * nGridLines; i++) {
+		for (unsigned i = 0; i < 2 * nGridLines; i++)
 			ebo[idx++] = i;
-		}
 		ebo[idx++] = 0;
 		ebo[idx++] = 2 * nGridLines - 2;
-		for (unsigned i = 2 * nGridLines; i < 4 * nGridLines - 4; i++) {
+		for (unsigned i = 2 * nGridLines; i < 4 * nGridLines - 4; i++)
 			ebo[idx++] = i;
-		}
 		ebo[idx++] = 1;
 		ebo[idx++] = 2 * nGridLines - 1;
 
-		// N E C E S S A R Y  FOR GENERATED DATA
-		ebo.applyData();
-		vbo.applyData();
+		ebo.bind(GL_ELEMENT_ARRAY_BUFFER);
+		ebo.buffer_data();
+		vbo.bind();
+		vbo.buffer_data();
 
+		nVerts = ebo.getNumElements();
+		vao.bind_buffers(ebo, vbo, false, false, false);
 	}
 };

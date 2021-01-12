@@ -1,5 +1,4 @@
-class Sphere :
-	public Scene::Object
+class Sphere : public Scene::Object
 {
 	// sphere size and detail data
 	const int nSlices = 50,
@@ -19,7 +18,10 @@ class Sphere :
 public:
 
 	Sphere(float x, float y, float z, Camera::Viewport& cam, Shader::Program& shader)
-		: Scene::Object(x, y, z, cam, &shader), vbo(sizeofvbo), ebo(numElements) { init_buffers(); }
+		: Scene::Object(x, y, z, cam, &shader), vao(), vbo(sizeofvbo), ebo(numElements)
+	{
+		init_buffers();
+	}
 
 	void init_buffers() override {
 		// Generate positions, normals, texture coordinates in a single data buffer
@@ -80,12 +82,14 @@ public:
 				}
 			}
 		}
-
-		ebo.applyData();
-		vbo.applyData();
+		
+		ebo.bind(GL_ELEMENT_ARRAY_BUFFER);
+		ebo.buffer_data();
+		vbo.bind();
+		vbo.buffer_data();
 
 		nVerts = ebo.getNumElements();
-		vao.bindBuffers(ebo, vbo, true, true, false);
+		vao.bind_buffers(ebo, vbo, true, true, false);
 	}
 	void update(float timeStep) override {
 		set_uniforms();
@@ -95,16 +99,13 @@ public:
 		shader->use();
 		vao.bind();
 		glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, 0);
+		vao.unBind();
 	}
 
 private:
 
-	void rotate() {
-		model = glm::rotate(model, glm::radians(1.0f), vec3(0.0f, 1.0f, 0.0f));
-	}
 	void set_uniforms() {
 		shader->use();
-		vao.bind();
 		shader->set("ModelViewMatrix", mv);
 		shader->set("NormalMatrix", mat3(vec3(mv[0]), vec3(mv[1]), vec3(mv[2])));
 		shader->set("MVP", cam.get_ViewToProjection_Matrix() * mv);
@@ -113,5 +114,7 @@ private:
 		rotate();
 		mv = cam.get_WorldToView_Matrix() * model;
 	}
-
+	void rotate() {
+		model = glm::rotate(model, glm::radians(1.0f), vec3(0.0f, 1.0f, 0.0f));
+	}
 };

@@ -4,7 +4,7 @@ namespace Camera
 	      glm::lookAt, glm::perspective,                // gtc/type_ptr.hpp
 	      glm::cross, glm::normalize, glm::radians;
 
-	constexpr vec3 world_up_vector = vec3(0.0f, 1.0f, 0.0f);
+	vec3 world_up_vector = vec3(0.0f, 1.0f, 0.0f);
 	const float SPEED = 2.5f;
 	const float SENSITIVITY = 0.1f;
 
@@ -50,7 +50,7 @@ namespace Camera
 			worldToView{ lookAt(pos, glm::normalize(pos - viewDir), world_up_vector) },
 			viewToProjection{ perspective(glm::radians(70.0f), aspect, 0.1f, 200.0f) },
 			RIGHT{ -glm::normalize(cross(world_up_vector, FORWARD)) },
-			UP{ glm::normalize(cross(FORWARD, RIGHT)) } {}
+			UP{ world_up_vector } {}
 		
 		void move(float incr, vec3& dir) {
 			position += incr * dir;
@@ -98,7 +98,14 @@ namespace Camera
 			m.pitch += yoffset;
 
 			constrain_pitch();
-			update_camera_vectors_using_updated_euler_angles();
+			// calculate the new Front vector
+			FORWARD.x = cos(radians(m.yaw)) * cos(radians(m.pitch));
+			FORWARD.y = sin(radians(m.pitch));
+			FORWARD.z = sin(radians(m.yaw)) * cos(radians(m.pitch));
+			FORWARD = normalize(FORWARD);
+			// also re-calculate the Right and Up vector
+			RIGHT = normalize(cross(FORWARD, world_up_vector));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+			UP = normalize(cross(RIGHT, FORWARD));
 		}
 
 		void constrain_pitch() {
@@ -109,17 +116,6 @@ namespace Camera
 		void constrain_fov() {
 			if (fov_deg < 1.0f) fov_deg = 1.0f;
 			else if (fov_deg > 90.0f) fov_deg = 90.0f;
-		}
-
-		void update_camera_vectors_using_updated_euler_angles() {
-			// calculate the new Front vector
-			FORWARD.x = cos(radians(m.yaw)) * cos(radians(m.pitch));
-			FORWARD.y = sin(radians(m.pitch));
-			FORWARD.z = sin(radians(m.yaw)) * cos(radians(m.pitch));
-			FORWARD = normalize(FORWARD);
-			// also re-calculate the Right and Up vector
-			RIGHT = normalize(cross(FORWARD, world_up_vector));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-			UP = normalize(cross(RIGHT, FORWARD));
 		}
 
 		void update_projection_matrix() {

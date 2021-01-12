@@ -13,12 +13,14 @@ class Cube: public Scene::Object
 public:
 
     Cube(float x, float y, float z, Camera::Viewport& cam, Shader::Program& shader)
-        : Scene::Object(x, y, z, cam, &shader), vao(), vbo(), ebo() {
+        : Scene::Object(x, y, z, cam, &shader), vao(), vbo(), ebo()
+    {
         init_buffers();
     }
     
     void init_buffers() override {
         GLfloat side2 = side / 2.0f;
+        vbo.bind();
         vbo = { // listed per vertex : pos, normal, texCoords, (vec3) (vec3) (vec2)
             // Front
            -side2, -side2,  side2,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f,
@@ -51,7 +53,7 @@ public:
             side2,  side2, -side2,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f,
            -side2,  side2, -side2,    0.0f, 1.0f, 0.0f,    0.0f, 1.0f,
         };
-
+        ebo.bind(GL_ELEMENT_ARRAY_BUFFER);
         ebo = {
             0,1,2,0,2,3,
             4,5,6,4,6,7,
@@ -63,7 +65,7 @@ public:
 
         nVerts = ebo.getNumElements();
 
-        vao.bindBuffers(ebo, vbo, true, true, false);
+        vao.bind_buffers(ebo, vbo, true, true, false);
     }
 
     void update(float t) override {
@@ -75,12 +77,10 @@ public:
         shader->use();
         vao.bind();
         glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, 0);
+        vao.unBind();
     }
 
 private:
-    void rotate() {
-        model = glm::rotate(model, glm::radians(0.3f), vec3(0.0f, 1.0f, 0.0f));
-    }
 
     void set_uniforms() {
         shader->use();
@@ -90,7 +90,7 @@ private:
     }
 
     void set_matrices() {
-        rotate();
+        model = glm::rotate(model, glm::radians(0.3f), vec3(0.0f, 1.0f, 0.0f));
         mv = cam.get_WorldToView_Matrix() * model;
     }
 };

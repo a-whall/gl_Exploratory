@@ -4,14 +4,17 @@ namespace d {
 
 class Function : public Scene::Object {
 
-	float nUnits, nEdges, nTriangles;
-	unsigned nElements;
+	float nUnits,       // units width of square range [0,x] = [0,y]
+		  nEdges,       // number of lines in the grid
+		  nTriangles;   // number of triangles needed to construct the grid
 
 	Vertex::Array vao;
 	Vertex::Buffer<float> vbo;
 	Vertex::Index ebo;
-
-	PyObject* mFunc; // callable
+	
+	PyObject* mFunc;       // python callable
+	std::string mFuncID;   // python dict key to callable
+	std::string pyFormat;  // format of argument data. eg: "f,f" = 2 float args
 
 public:
 
@@ -31,7 +34,7 @@ public:
 	void init_buffers() override {
 		gen_buffers_for_function();
 		nVerts = ebo.getNumElements();
-		vao.bindBuffers(ebo, vbo, false, false, false);
+		vao.bind_buffers(ebo, vbo, false, false, false);
 	}
 
 	void update(float t) override {
@@ -43,6 +46,7 @@ public:
 		shader->use();
 		vao.bind();
 		glDrawElements(GL_TRIANGLES, nVerts, GL_UNSIGNED_INT, 0);
+		vao.unBind();
 	}
 
 private:
@@ -83,13 +87,14 @@ private:
 				ebo[idx++] = elem;
 			}
 		}
-		ebo.applyData();
-		vbo.applyData();
+		ebo.bind(GL_ELEMENT_ARRAY_BUFFER);
+		ebo.buffer_data();
+		vbo.bind();
+		vbo.buffer_data();
 	}
 
 	void set_uniforms() {
 		shader->use();
-		vao.bind();
 		shader->set("MVP", cam.get_ViewToProjection_Matrix() * mv);
 	}
 

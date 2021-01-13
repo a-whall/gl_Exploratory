@@ -20,7 +20,7 @@ public:
 
     Particles(int nx, int ny, int nz, Camera::Viewport& cam)
         : Scene::Object(0.0f, 0.0f, 0.0f, cam),
-        num_p(20, 20, 20), total_p(num_p.x * num_p.y * num_p.z),
+        num_p(nx, ny, nz), total_p(num_p.x * num_p.y * num_p.z),
         speed(.005f), angle(0.0f),
         vao_particles(), vbo_p_pos(total_p * 4),
         vao_blackHole(), vbo_p_vel(total_p * 4, 0.0f),

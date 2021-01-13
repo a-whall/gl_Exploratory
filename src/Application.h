@@ -23,10 +23,6 @@ public:
 	Scene::Manager scene_manager;
 	Camera::Viewport* cam;
 	Shader::Program* phong_shader;
-	Shader::Program* ps2;
-	Shader::Program* graphlines_shader;
-	Shader::Program* function_shader;
-	Shader::Program* pointSprites_shader;
 
 
 	void init(const char* title, int x, int y, int w, int h, int fullscreen)
@@ -81,24 +77,14 @@ private:
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
 		/* Phong example  */
-		phong_shader = new Shader::Program("src/Phong.glsl");
-		set_phong_uniforms(*phong_shader);
-		scene_manager.new_object<Cube>(0.0f, 0.0f, -2.0f, *cam, *phong_shader);
-		
-		/* Plane for graphing */
-		graphlines_shader = new Shader::Program("src/GraphLines.glsl");
-		scene_manager.new_object<Plane>(30.0f, *cam, *graphlines_shader);
-		
-		/* Function for graphing */
-		function_shader = new Shader::Program("src/Function.glsl");
-		scene_manager.new_object<Function>(30.0f, *cam, *function_shader);
-		
-		/* Particles with gravity example*/
-		scene_manager.new_object<Particles>(5.0f, 5.0f, 5.0f, *cam);
+		//phong_shader = new Shader::Program("src/Phong.glsl");
+		//set_phong_uniforms(*phong_shader);
+		//scene_manager.new_object<Cube>(0.0f, 0.0f, -2.0f, *cam, *phong_shader);
 
-		/* Point sprites example */
-		pointSprites_shader = new Shader::Program("src/pointSprites.glsl");
-		scene_manager.new_object<PointSprites>("media/diamond_ore.png", *cam, *pointSprites_shader);
+		scene_manager.new_object<Plane>(30.0f, *cam);         // square horizontal grid plane
+		scene_manager.new_object<Function>(30.0f, *cam);      // math function graph
+		scene_manager.new_object<Particles>(20, 20, 20, *cam);// particles with gravity
+		scene_manager.new_object<PointSprites>("media/diamond_ore.png", *cam); // point sprite (point textures)
 	}
 
 	void set_phong_uniforms(Shader::Program &shader) {

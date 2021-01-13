@@ -6,9 +6,10 @@ class PointSprites : public Scene::Object
 
 public:
 
-	PointSprites(const char* texFileName, Camera::Viewport& cam, Shader::Program& shader)
-		: Scene::Object(0.0f, 0.0f, 0.0f, cam, &shader), vao(), vbo_pos(numSprites * 3)
+	PointSprites(const char* texFileName, Camera::Viewport& cam)
+		: Scene::Object(0.0f, 0.0f, 0.0f, cam), vao(), vbo_pos(numSprites * 3)
 	{
+		shader = new Shader::Program("src/PointSprites.glsl");
 		GLuint texID = Texture::load(texFileName);
 		init_buffers();
 		set_texture_uniforms();

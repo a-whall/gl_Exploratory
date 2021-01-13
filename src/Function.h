@@ -18,14 +18,15 @@ class Function : public Scene::Object {
 
 public:
 
-	Function(float numUnits, Camera::Viewport& cam, Shader::Program& shader)
-		: Scene::Object(0, 0, 0, cam, &shader),
+	Function(float numUnits, Camera::Viewport& cam)
+		: Scene::Object(0, 0, 0, cam),
 		nUnits(numUnits), nEdges(nUnits + 1), nTriangles(nUnits* nUnits * 2),
 		vao(), vbo(3 * (nUnits + 1) * (nUnits + 1)), ebo(3 * nTriangles)
 	{
 		std::string f;
 		std::cout << "Enter a function of two variables: ";
 		getline(std::cin, f);
+		shader = new Shader::Program("src/Function.glsl");
 		cpython::pyfile_buildFunction(f.c_str());
 		mFunc = cpython::pyfile_retrieveCallable("Func", "f");
 		init_buffers();

@@ -9,11 +9,12 @@ class Plane : public Scene::Object {
 
 public:
 
-	Plane(float numUnits, Camera::Viewport& cam, Shader::Program& shader)
-		: Scene::Object(0, 0, 0, cam, &shader),
+	Plane(float numUnits, Camera::Viewport& cam)
+		: Scene::Object(0, 0, 0, cam),
 		nUnits(numUnits), nGridLines(numUnits + 1),
 		vao(), vbo(3 * 4 * nUnits), ebo(4 * nGridLines)
 	{
+		shader = new Shader::Program("src/GraphLines.glsl");
 		init_buffers();
 	}
 
